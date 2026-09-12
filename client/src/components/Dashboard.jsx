@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { motion } from 'framer-motion';
@@ -24,9 +24,10 @@ export function Dashboard() {
   const [completingId, setCompletingId] = useState(null);
   const [purchasingId, setPurchasingId] = useState(null);
 
-  // Level-up celebration state
+  // Level-up celebration state & trigger ref for focus return
   const [celebrationData, setCelebrationData] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const activeTriggerRef = useRef(null);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -56,7 +57,6 @@ export function Dashboard() {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        // Fetch profile (/api/me), quests (/api/quests), and shop catalog (/api/items)
         const [meRes, questsRes, itemsRes] = await Promise.all([
           fetch(`${apiUrl}/api/me`, { headers }),
           fetch(`${apiUrl}/api/quests`, { headers }),
@@ -165,6 +165,8 @@ export function Dashboard() {
   // 4. Complete Quest (Core Progression Handler)
   const handleCompleteQuest = async (questId) => {
     setCompletingId(questId);
+    activeTriggerRef.current = document.activeElement;
+
     try {
       const res = await fetch(`${apiUrl}/api/quests/${questId}/complete`, {
         method: 'POST',
@@ -177,7 +179,6 @@ export function Dashboard() {
 
       if (res.status === 409) {
         addToast('This quest is already completed!', 'error');
-        // sync quest status locally
         setQuests((prev) => prev.map((q) => (q.id === questId ? { ...q, status: 'completed' } : q)));
         return;
       }
@@ -279,83 +280,98 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-cozy-cream text-cozy-brown-dark flex flex-col justify-between p-4 sm:p-8 font-sans selection:bg-cozy-terracotta-subtle">
+      {/* Keyboard Accessibility: Skip Link */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      {/* Level-Up Celebration Modal */}
+      {/* Level-Up Celebration Modal with Focus Trap */}
       <CelebrationModal
         isOpen={showCelebration}
         onClose={() => setShowCelebration(false)}
         levelData={celebrationData}
+        triggerRef={activeTriggerRef}
       />
 
       <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Top HUD Header */}
         <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-cozy-brown-dark pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 pixel-box bg-cozy-parchment rounded-pixel flex items-center justify-center text-2xl shadow-pixel-sm border-2 border-cozy-brown-dark">
+            <div 
+              className="w-12 h-12 pixel-box bg-cozy-parchment rounded-pixel flex items-center justify-center text-2xl shadow-pixel-sm border-2 border-cozy-brown-dark select-none"
+              aria-hidden="true"
+            >
               ☕
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-pixel text-cozy-brown-dark tracking-wide">Life RPG</h1>
+                <h1 className="text-2xl font-pixel text-cozy-brown-dark tracking-wide">
+                  Life RPG
+                </h1>
                 <span className="px-2 py-0.5 bg-cozy-sage-subtle text-cozy-sage-dark text-[11px] font-pixel rounded border border-cozy-sage-light">
                   LVL {char.level} Scholar
                 </span>
               </div>
-              <p className="text-xs text-cozy-brown-medium truncate max-w-[200px] sm:max-w-xs">
+              <p className="text-xs text-cozy-brown-medium truncate max-w-[220px] sm:max-w-xs">
                 Scholar: <span className="font-semibold text-cozy-brown-dark">{user?.email}</span>
               </p>
             </div>
           </div>
 
           {/* HUD Counters & Logout */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Coins */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Coins with accessible label */}
             <motion.div
               key={char.cozy_coins}
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 0.3 }}
-              className="pixel-box bg-cozy-parchment px-3 py-1.5 rounded-pixel flex items-center gap-1.5 shadow-pixel-sm border-2 border-cozy-brown-dark"
+              aria-label={`Cozy Coins: ${char.cozy_coins}`}
+              className="touch-target pixel-box bg-cozy-parchment px-3 py-1.5 rounded-pixel flex items-center gap-1.5 shadow-pixel-sm border-2 border-cozy-brown-dark"
             >
-              <span className="text-sm">🪙</span>
+              <span className="text-base" role="img" aria-label="Coins icon">🪙</span>
               <span className="font-pixel text-sm font-bold text-cozy-gold-dark">
                 {char.cozy_coins} <span className="font-sans text-[11px] font-normal text-cozy-brown-medium hidden sm:inline">Coins</span>
               </span>
             </motion.div>
 
-            {/* Streak */}
+            {/* Streak with accessible label */}
             <motion.div
               key={streak.current_streak}
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 0.3 }}
-              className="pixel-box bg-cozy-terracotta-subtle px-3 py-1.5 rounded-pixel flex items-center gap-1.5 shadow-pixel-sm border-2 border-cozy-terracotta-dark"
+              aria-label={`Daily Streak: ${streak.current_streak} days`}
+              className="touch-target pixel-box bg-cozy-terracotta-subtle px-3 py-1.5 rounded-pixel flex items-center gap-1.5 shadow-pixel-sm border-2 border-cozy-terracotta-dark"
             >
-              <span className="text-sm">🔥</span>
+              <span className="text-base" role="img" aria-label="Streak flame icon">🔥</span>
               <span className="font-pixel text-sm font-bold text-cozy-terracotta-dark">
                 {streak.current_streak} <span className="font-sans text-[11px] font-normal text-cozy-brown-medium hidden sm:inline">Day Streak</span>
               </span>
             </motion.div>
 
-            {/* Logout */}
+            {/* Logout Button */}
             <button
+              type="button"
               onClick={handleLogout}
-              className="pixel-box-interactive bg-cozy-card hover:bg-cozy-terracotta-subtle hover:text-cozy-terracotta-dark text-cozy-brown-dark font-pixel text-xs sm:text-sm px-3 py-1.5 rounded-pixel font-semibold transition flex items-center gap-1.5 shadow-pixel-sm"
+              aria-label="Log out of your Life RPG session"
+              className="touch-target pixel-box-interactive bg-cozy-card hover:bg-cozy-terracotta-subtle hover:text-cozy-terracotta-dark text-cozy-brown-dark font-pixel text-xs sm:text-sm px-4 py-2 rounded-pixel font-semibold transition flex items-center gap-1.5 shadow-pixel-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark"
             >
-              <span>🚪</span>
+              <span aria-hidden="true">🚪</span>
               <span>Logout</span>
             </button>
           </div>
         </header>
 
         {/* Character Progress & Non-Linear Level Stats */}
-        <section className="pixel-box bg-cozy-card p-5 sm:p-6 rounded-pixel shadow-pixel border-2 border-cozy-brown-dark bg-gradient-to-br from-white to-cozy-parchment">
+        <section aria-labelledby="char-stats-heading" className="pixel-box bg-cozy-card p-5 sm:p-6 rounded-pixel shadow-pixel border-2 border-cozy-brown-dark bg-gradient-to-br from-white to-cozy-parchment">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-pixel text-xl sm:text-2xl text-cozy-brown-dark">
+                <h2 id="char-stats-heading" className="font-pixel text-xl sm:text-2xl text-cozy-brown-dark">
                   Level {char.level} Scholar
-                </span>
+                </h2>
                 <span className="text-xs bg-cozy-sage text-white px-2 py-0.5 rounded-pixel font-pixel font-bold">
                   Active Journey
                 </span>
@@ -371,9 +387,17 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Animated Focus Points Spring Bar */}
-          <div className="space-y-1">
-            <div className="w-full bg-cozy-brown-subtle h-4 rounded-pixel border-2 border-cozy-brown-dark overflow-hidden p-0.5">
+          {/* Accessible Focus Points Progress Bar */}
+          <div className="space-y-1.5">
+            <div 
+              role="progressbar"
+              aria-valuenow={char.current_xp}
+              aria-valuemin={0}
+              aria-valuemax={char.xp_to_next_level}
+              aria-label="Focus Points Progression to next level"
+              aria-valuetext={`${char.current_xp} of ${char.xp_to_next_level} Focus Points, ${xpPercent} percent`}
+              className="w-full bg-cozy-brown-subtle h-4 rounded-pixel border-2 border-cozy-brown-dark overflow-hidden p-0.5"
+            >
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${xpPercent}%` }}
@@ -399,13 +423,14 @@ export function Dashboard() {
                 key={stat.id}
                 animate={{ scale: [1, 1.04, 1] }}
                 transition={{ duration: 0.3 }}
-                className="pixel-box bg-cozy-parchment/60 p-2.5 rounded-pixel flex items-center justify-between border-cozy-border"
+                aria-label={`${stat.name} attribute level ${stat.val}`}
+                className="pixel-box bg-cozy-parchment/70 p-3 rounded-pixel flex items-center justify-between border-cozy-border"
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base">{stat.icon}</span>
-                  <span className="font-pixel text-xs text-cozy-brown-dark">{stat.name}</span>
+                  <span className="text-lg" aria-hidden="true">{stat.icon}</span>
+                  <span className="font-pixel text-xs text-cozy-brown-dark font-bold">{stat.name}</span>
                 </div>
-                <span className="font-pixel text-xs font-bold px-1.5 py-0.5 bg-white rounded border border-cozy-border">
+                <span className="font-pixel text-xs font-bold px-2 py-0.5 bg-white rounded border border-cozy-border shadow-pixel-sm">
                   LVL {stat.val}
                 </span>
               </motion.div>
@@ -413,35 +438,41 @@ export function Dashboard() {
           </div>
         </section>
 
-        {/* View Switcher: Quests Scroll vs Study Emporium */}
-        <div className="flex items-center gap-2 border-b-2 border-cozy-brown-dark pb-2">
+        {/* View Switcher: Nav Element */}
+        <nav aria-label="Study Haven Views" className="flex items-center gap-2 border-b-2 border-cozy-brown-dark pb-2 overflow-x-auto">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'quests'}
             onClick={() => setActiveTab('quests')}
-            className={`pixel-box px-4 py-2 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
               activeTab === 'quests'
                 ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
                 : 'bg-cozy-parchment text-cozy-brown-medium hover:text-cozy-brown-dark'
             }`}
           >
-            <span>📜</span>
+            <span aria-hidden="true">📜</span>
             <span>Study Quests ({quests.filter(q => q.status === 'active').length})</span>
           </button>
 
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'shop'}
             onClick={() => setActiveTab('shop')}
-            className={`pixel-box px-4 py-2 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
               activeTab === 'shop'
                 ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
                 : 'bg-cozy-parchment text-cozy-brown-medium hover:text-cozy-brown-dark'
             }`}
           >
-            <span>🛒</span>
+            <span aria-hidden="true">🛒</span>
             <span>Study Emporium ({items.length} Items)</span>
           </button>
-        </div>
+        </nav>
 
-        {/* Tab Views */}
-        <main>
+        {/* Main Content Area with Skip Link anchor */}
+        <main id="main-content" tabIndex={-1} className="focus:outline-none">
           {activeTab === 'quests' ? (
             <QuestList
               quests={quests}
@@ -465,7 +496,7 @@ export function Dashboard() {
 
       {/* Footer */}
       <footer className="w-full max-w-4xl mx-auto text-center text-xs text-cozy-brown-medium border-t border-cozy-border pt-4 mt-8">
-        Life RPG • Non-Linear Progression Engine • Real-Time Inventory &amp; Quests
+        Life RPG • Accessible Study Sanctuary • Keyboard Navigable (Tab / Enter / Esc)
       </footer>
     </div>
   );

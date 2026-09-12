@@ -3,41 +3,41 @@
 @tailwind utilities;
 
 :root {
-  /* Theme Core Palette */
+  /* Theme Core Palette - WCAG AA High Contrast Compliant */
   --color-cream: #FDFBF7;
-  --color-parchment: #F4EFE6;
+  --color-parchment: #F3ECE1;
   --color-card: #FFFFFF;
-  --color-border: #E5DACB;
+  --color-border: #D8CAB6;
 
-  /* Browns (Text, Woodwork & Accents) */
-  --color-brown-dark: #3E2F26;
-  --color-brown-medium: #6B5547;
-  --color-brown-light: #A48F80;
-  --color-brown-subtle: #F0E9DF;
-  --color-brown-base: #564336;
+  /* Browns - Enhanced contrast for text against cream (>= 4.5:1) */
+  --color-brown-dark: #2C1E17;    /* ~14:1 contrast on cream */
+  --color-brown-medium: #4D372B;  /* ~8.5:1 contrast on cream */
+  --color-brown-light: #685042;   /* ~5.5:1 contrast on cream */
+  --color-brown-subtle: #E8DED1;
+  --color-brown-base: #3D2C22;
 
-  /* Sage Green Accents */
-  --color-sage-base: #6E8B6E;
-  --color-sage-dark: #4B684B;
-  --color-sage-light: #A3BCA0;
-  --color-sage-subtle: #E8EFE5;
+  /* Sage Green Accents - Deepened for >= 4.5:1 readability on light backgrounds */
+  --color-sage-base: #355E3B;     /* ~5.8:1 contrast */
+  --color-sage-dark: #244229;     /* ~9.2:1 contrast */
+  --color-sage-light: #7E9E82;
+  --color-sage-subtle: #E2ECE1;
 
-  /* Muted Terracotta Highlights */
-  --color-terracotta-base: #C86D51;
-  --color-terracotta-dark: #9D4930;
-  --color-terracotta-light: #EAA894;
-  --color-terracotta-subtle: #FAEDE8;
+  /* Muted Terracotta Highlights - Deepened for >= 4.5:1 readability */
+  --color-terracotta-base: #A03E22; /* ~5.4:1 contrast */
+  --color-terracotta-dark: #7A2B15; /* ~8.0:1 contrast */
+  --color-terracotta-light: #D98D77;
+  --color-terracotta-subtle: #F7EAE5;
 
-  /* Cozy Gold (Cozy Coins) */
-  --color-gold-base: #D89C3F;
-  --color-gold-dark: #A97321;
-  --color-gold-light: #F5DEB3;
+  /* Cozy Gold (Cozy Coins) - Deepened for text contrast */
+  --color-gold-base: #8F5B10;     /* ~5.2:1 contrast */
+  --color-gold-dark: #6E4407;     /* ~8.1:1 contrast */
+  --color-gold-light: #FCEFD2;
 
   /* Character Stats Tokens */
-  --color-stat-focus: #4F8299;
-  --color-stat-discipline: #D89C3F;
-  --color-stat-vitality: #6E8B6E;
-  --color-stat-creativity: #C86D51;
+  --color-stat-focus: #285873;      /* Deep study blue */
+  --color-stat-discipline: #8F5B10; /* Steadfast gold */
+  --color-stat-vitality: #355E3B;   /* Vitality green */
+  --color-stat-creativity: #A03E22; /* Terracotta flame */
 
   /* Typography */
   --font-pixel: 'Pixelify Sans', cursive, sans-serif;
@@ -52,11 +52,18 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-pixel);
     letter-spacing: 0.02em;
+  }
+
+  /* Consistent, high-visibility keyboard focus outline */
+  :focus-visible {
+    outline: 2px solid var(--color-brown-dark);
+    outline-offset: 2px;
   }
 }
 
@@ -70,16 +77,58 @@
   .pixel-box-interactive {
     border: 2px solid var(--color-brown-dark);
     box-shadow: 3px 3px 0px 0px var(--color-brown-dark);
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+    cursor: pointer;
   }
   
-  .pixel-box-interactive:hover {
+  .pixel-box-interactive:hover:not(:disabled) {
     transform: translate(-1px, -1px);
     box-shadow: 4px 4px 0px 0px var(--color-brown-dark);
   }
 
-  .pixel-box-interactive:active {
+  .pixel-box-interactive:active:not(:disabled) {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0px 0px var(--color-brown-dark);
   }
+
+  /* Minimum 44x44px touch target on mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to Content Link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 10px;
+  background: var(--color-brown-dark);
+  color: #ffffff;
+  padding: 8px 16px;
+  z-index: 100;
+  border-radius: 4px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 10px;
 }
