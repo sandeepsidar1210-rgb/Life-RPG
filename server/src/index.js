@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import characterRouter from './routes/character.js';
+import questsRouter from './routes/quests.js';
+import itemsRouter from './routes/items.js';
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +39,8 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api', characterRouter);
+app.use('/api/quests', questsRouter);
+app.use('/api/items', itemsRouter);
 
 // Root informational endpoint
 app.get('/', (req, res) => {
@@ -46,7 +50,9 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      me: '/api/me'
+      me: '/api/me',
+      quests: '/api/quests',
+      items: '/api/items'
     }
   });
 });
