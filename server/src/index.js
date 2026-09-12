@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import characterRouter from './routes/character.js';
 
 // Load environment variables
 dotenv.config();
@@ -34,6 +35,9 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// API Routes
+app.use('/api', characterRouter);
+
 // Root informational endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -41,7 +45,8 @@ app.get('/', (req, res) => {
     status: 'online',
     version: '1.0.0',
     endpoints: {
-      health: '/health'
+      health: '/health',
+      me: '/api/me'
     }
   });
 });
