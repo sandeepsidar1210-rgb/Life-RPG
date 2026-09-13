@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
+import { checkAchievements } from '../utils/achievements.js';
 
 const router = express.Router();
 
@@ -447,6 +448,9 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
 
     if (updateQuestErr) throw updateQuestErr;
 
+    // f. Check & award achievements (non-blocking — failures never crash the response)
+    const newAchievements = await checkAchievements(userId, client);
+
     // g. Return full updated data and celebration indicators
     return res.status(200).json({
       message: 'Quest completed successfully!',
@@ -461,7 +465,8 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
         cozy_coins: quest.cozy_coins_reward,
         attribute: quest.attribute_type,
         attribute_increase: 1
-      }
+      },
+      newAchievements
     });
 
   } catch (err) {

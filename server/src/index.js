@@ -5,6 +5,7 @@ import characterRouter from './routes/character.js';
 import questsRouter from './routes/quests.js';
 import itemsRouter from './routes/items.js';
 import inventoryRouter from './routes/inventory.js';
+import achievementsRouter from './routes/achievements.js';
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api', characterRouter);
 app.use('/api/quests', questsRouter);
 app.use('/api/items', itemsRouter);
 app.use('/api/inventory', inventoryRouter);
+app.use('/api/achievements', achievementsRouter);
 
 // Root informational endpoint
 app.get('/', (req, res) => {

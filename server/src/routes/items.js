@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
+import { checkAchievements } from '../utils/achievements.js';
 
 const router = express.Router();
 const getClient = () => supabaseAdmin || supabase;
@@ -109,11 +110,15 @@ router.post('/:id/purchase', requireAuth, async (req, res) => {
 
     if (invErr) throw invErr;
 
+    // Check & award achievements (non-blocking)
+    const newAchievements = await checkAchievements(userId, client);
+
     return res.status(200).json({
       message: `Successfully purchased ${item.name}!`,
       item,
       inventory: inventoryEntry,
-      character: updatedChar
+      character: updatedChar,
+      newAchievements
     });
 
   } catch (err) {

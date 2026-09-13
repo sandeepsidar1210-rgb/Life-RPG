@@ -59,6 +59,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/achievements"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="achievements" />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Root redirect to Dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

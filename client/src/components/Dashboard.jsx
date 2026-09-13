@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { motion } from 'framer-motion';
 import { RoomSkeleton } from './MyRoom/RoomSkeleton.jsx';
 import { CelebrationModal } from './CelebrationModal.jsx';
 import { ToastContainer } from './Toast.jsx';
+import { AchievementBanner } from './AchievementBanner.jsx';
 
 // Code-split major views so Three.js, Shop, and Quest assets are loaded on demand
 const QuestList = React.lazy(() => import('./QuestList.jsx').then(m => ({ default: m.QuestList })));
 const ShopCatalog = React.lazy(() => import('./ShopCatalog.jsx').then(m => ({ default: m.ShopCatalog })));
 const MyRoom = React.lazy(() => import('./MyRoom.jsx'));
+const AchievementsGrid = React.lazy(() => import('./AchievementsGrid.jsx').then(m => ({ default: m.AchievementsGrid })));
 
 function TabLoadingFallback({ message = "Gathering wares..." }) {
   return (
@@ -29,6 +31,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
   const getTabFromPath = () => {
     if (location.pathname.includes('/room')) return 'room';
     if (location.pathname.includes('/shop')) return 'shop';
+    if (location.pathname.includes('/achievements')) return 'achievements';
     return defaultTab || 'quests';
   };
 
@@ -44,6 +47,8 @@ export function Dashboard({ defaultTab = 'quests' }) {
       navigate('/dashboard/room');
     } else if (tab === 'shop') {
       navigate('/dashboard/shop');
+    } else if (tab === 'achievements') {
+      navigate('/dashboard/achievements');
     } else {
       navigate('/dashboard');
     }
@@ -65,6 +70,12 @@ export function Dashboard({ defaultTab = 'quests' }) {
   const [celebrationData, setCelebrationData] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const activeTriggerRef = useRef(null);
+
+  // Achievement banner queue: show one at a time, sequenced after level-up
+  const [achievementQueue, setAchievementQueue] = useState([]);
+  const [currentAchievement, setCurrentAchievement] = useState(null);
+  // Track newly unlocked achievements for the grid to update without refetching
+  const [freshAchievements, setFreshAchievements] = useState([]);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -146,6 +157,34 @@ export function Dashboard({ defaultTab = 'quests' }) {
       isSubscribed = false;
     };
   }, [token]);
+
+  // Achievement banner queue: drain one item when currentAchievement is clear AND celebration modal is closed
+  useEffect(() => {
+    // Don't start banners while the level-up modal is showing — wait for it to close first
+    if (showCelebration) return;
+    if (!currentAchievement && achievementQueue.length > 0) {
+      const [next, ...rest] = achievementQueue;
+      setCurrentAchievement(next);
+      setAchievementQueue(rest);
+    }
+  }, [currentAchievement, achievementQueue, showCelebration]);
+
+  /**
+   * Enqueue newly unlocked achievements to show after the level-up modal closes.
+   * If a level-up is in progress, we delay by watching showCelebration.
+   */
+  const addAchievementNotifications = useCallback((newAchs) => {
+    if (!newAchs || newAchs.length === 0) return;
+    // Track for the achievements grid to update without a full refetch
+    setFreshAchievements((prev) => [...prev, ...newAchs]);
+    // Enqueue the banners
+    setAchievementQueue((prev) => [...prev, ...newAchs]);
+  }, []);
+
+  // When celebration modal closes, allow the achievement banner queue to drain
+  const handleCelebrationClose = useCallback(() => {
+    setShowCelebration(false);
+  }, []);
 
   // 1. Create Quest
   const handleCreateQuest = async (questData) => {
@@ -262,6 +301,11 @@ export function Dashboard({ defaultTab = 'quests' }) {
       if (data.streakIncreased) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
       }
+
+      // Queue achievement banners (they'll show after the level-up modal if one opened)
+      if (data.newAchievements && data.newAchievements.length > 0) {
+        addAchievementNotifications(data.newAchievements);
+      }
     } catch (err) {
       addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
@@ -293,6 +337,11 @@ export function Dashboard({ defaultTab = 'quests' }) {
       setInventory((prev) => [...prev, data.inventory]);
 
       addToast(`Adopted "${item.name}"! Coins remaining: ${data.character.cozy_coins}`, 'success');
+
+      // Queue achievement banners for any unlocks triggered by this purchase
+      if (data.newAchievements && data.newAchievements.length > 0) {
+        addAchievementNotifications(data.newAchievements);
+      }
     } catch (err) {
       addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
@@ -404,10 +453,18 @@ export function Dashboard({ defaultTab = 'quests' }) {
       {/* Level-Up Celebration Modal */}
       <CelebrationModal
         isOpen={showCelebration}
-        onClose={() => setShowCelebration(false)}
+        onClose={handleCelebrationClose}
         levelData={celebrationData}
         triggerRef={activeTriggerRef}
       />
+
+      {/* Achievement Unlock Banner — shows after level-up modal closes */}
+      {!showCelebration && (
+        <AchievementBanner
+          achievement={currentAchievement}
+          onDismiss={() => setCurrentAchievement(null)}
+        />
+      )}
 
       <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Top HUD Header */}
@@ -611,6 +668,21 @@ export function Dashboard({ defaultTab = 'quests' }) {
             <span aria-hidden="true">🛒</span>
             <span>Study Emporium ({items.length} Items)</span>
           </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'achievements'}
+            onClick={() => handleTabSwitch('achievements')}
+            className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
+              activeTab === 'achievements'
+                ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
+                : 'bg-cozy-parchment text-cozy-brown-medium hover:text-cozy-brown-dark'
+            }`}
+          >
+            <span aria-hidden="true">🏆</span>
+            <span>Achievements</span>
+          </button>
         </nav>
 
         {/* Main Content Area */}
@@ -647,6 +719,14 @@ export function Dashboard({ defaultTab = 'quests' }) {
                 userCoins={char.cozy_coins}
                 onPurchase={handlePurchaseItem}
                 purchasingId={purchasingId}
+              />
+            </Suspense>
+          )}
+
+          {activeTab === 'achievements' && (
+            <Suspense fallback={<TabLoadingFallback message="Unrolling Achievements Scroll..." />}>
+              <AchievementsGrid
+                externalAchievements={freshAchievements}
               />
             </Suspense>
           )}
