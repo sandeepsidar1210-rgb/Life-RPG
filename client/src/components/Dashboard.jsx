@@ -6,6 +6,7 @@ import { RoomSkeleton } from './MyRoom/RoomSkeleton.jsx';
 import { CelebrationModal } from './CelebrationModal.jsx';
 import { ToastContainer } from './Toast.jsx';
 import { AchievementBanner } from './AchievementBanner.jsx';
+import { RoomUnlockModal } from './RoomUnlockModal.jsx';
 
 // Code-split major views so Three.js, Shop, and Quest assets are loaded on demand
 const QuestList = React.lazy(() => import('./QuestList.jsx').then(m => ({ default: m.QuestList })));
@@ -61,6 +62,21 @@ export function Dashboard({ defaultTab = 'quests' }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Multi-room state
+  const [rooms, setRooms] = useState([]);
+  const [activeRoom, setActiveRoom] = useState(null);
+  const [roomUnlockQueue, setRoomUnlockQueue] = useState([]);
+  const [currentUnlockedRoom, setCurrentUnlockedRoom] = useState(null);
+
+  const handleSelectRoom = useCallback((room) => {
+    setActiveRoom(room);
+    if (typeof window !== 'undefined' && room?.id) {
+      try {
+        localStorage.setItem('life_rpg_active_room_id', room.id);
+      } catch (_) {}
+    }
+  }, []);
+
   // Interaction loading states
   const [completingId, setCompletingId] = useState(null);
   const [purchasingId, setPurchasingId] = useState(null);
@@ -108,7 +124,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
     return err?.message || 'Something went wrong. Please try again.';
   };
 
-  // Fetch initial profile, quests, inventory, and catalog
+  // Fetch initial profile, quests, inventory, catalog, and rooms
   useEffect(() => {
     let isSubscribed = true;
 
@@ -118,11 +134,12 @@ export function Dashboard({ defaultTab = 'quests' }) {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        const [meRes, questsRes, itemsRes, invRes] = await Promise.all([
+        const [meRes, questsRes, itemsRes, invRes, roomsRes] = await Promise.all([
           fetch(`${apiUrl}/api/me`, { headers }),
           fetch(`${apiUrl}/api/quests`, { headers }),
           fetch(`${apiUrl}/api/items`),
-          fetch(`${apiUrl}/api/inventory`, { headers })
+          fetch(`${apiUrl}/api/inventory`, { headers }),
+          fetch(`${apiUrl}/api/rooms`, { headers })
         ]);
 
         if (!meRes.ok) throw new Error('Could not fetch profile');
@@ -137,11 +154,30 @@ export function Dashboard({ defaultTab = 'quests' }) {
         let invData = { inventory: [] };
         if (invRes.ok) invData = await invRes.json();
 
+        let roomsData = { rooms: [] };
+        if (roomsRes.ok) roomsData = await roomsRes.json();
+
         if (isSubscribed) {
           setProfile(meData);
           setQuests(questsData.quests || []);
           setItems(itemsData.items || []);
           setInventory(invData.inventory || meData.inventory || []);
+
+          const fetchedRooms = roomsData.rooms || [];
+          setRooms(fetchedRooms);
+
+          // Default active room: restore from localStorage if unlocked, or first unlocked room
+          if (fetchedRooms.length > 0) {
+            let savedRoom = null;
+            if (typeof window !== 'undefined') {
+              try {
+                const savedRoomId = localStorage.getItem('life_rpg_active_room_id');
+                savedRoom = fetchedRooms.find((r) => r.id === savedRoomId && r.is_unlocked);
+              } catch (_) {}
+            }
+            const defaultUnlocked = savedRoom || fetchedRooms.find((r) => r.is_unlocked) || fetchedRooms[0];
+            setActiveRoom(defaultUnlocked);
+          }
         }
       } catch (err) {
         console.error('[Dashboard Load Error]', err);
@@ -158,16 +194,26 @@ export function Dashboard({ defaultTab = 'quests' }) {
     };
   }, [token]);
 
-  // Achievement banner queue: drain one item when currentAchievement is clear AND celebration modal is closed
+  // 1. Room unlock celebration queue: shows after level-up modal closes
   useEffect(() => {
-    // Don't start banners while the level-up modal is showing — wait for it to close first
     if (showCelebration) return;
+    if (!currentUnlockedRoom && roomUnlockQueue.length > 0) {
+      const [next, ...rest] = roomUnlockQueue;
+      setCurrentUnlockedRoom(next);
+      setRoomUnlockQueue(rest);
+    }
+  }, [currentUnlockedRoom, roomUnlockQueue, showCelebration]);
+
+  // 2. Achievement banner queue: shows after BOTH level-up modal AND room unlock modal are closed
+  useEffect(() => {
+    // Wait until level-up modal AND room unlock modal are closed
+    if (showCelebration || currentUnlockedRoom) return;
     if (!currentAchievement && achievementQueue.length > 0) {
       const [next, ...rest] = achievementQueue;
       setCurrentAchievement(next);
       setAchievementQueue(rest);
     }
-  }, [currentAchievement, achievementQueue, showCelebration]);
+  }, [currentAchievement, achievementQueue, showCelebration, currentUnlockedRoom]);
 
   /**
    * Enqueue newly unlocked achievements to show after the level-up modal closes.
@@ -302,7 +348,18 @@ export function Dashboard({ defaultTab = 'quests' }) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
       }
 
-      // Queue achievement banners (they'll show after the level-up modal if one opened)
+      // If newly unlocked rooms resulted from leveling up, enqueue them for celebration
+      if (data.newlyUnlockedRooms && data.newlyUnlockedRooms.length > 0) {
+        setRooms((prev) =>
+          prev.map((r) => {
+            const matched = data.newlyUnlockedRooms.find((nr) => nr.id === r.id);
+            return matched ? { ...r, is_unlocked: true, levels_remaining: 0 } : r;
+          })
+        );
+        setRoomUnlockQueue((prev) => [...prev, ...data.newlyUnlockedRooms]);
+      }
+
+      // Queue achievement banners (they'll show after the level-up modal and room modal if opened)
       if (data.newAchievements && data.newAchievements.length > 0) {
         addAchievementNotifications(data.newAchievements);
       }
@@ -350,7 +407,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
   };
 
   // 6. Equip / Unequip Item (with Optimistic UI and rollback)
-  const handleToggleEquip = async (inventoryId) => {
+  const handleToggleEquip = async (inventoryId, targetRoomId, targetEquippedOverride) => {
     if (equippingId) return;
     setEquippingId(inventoryId);
 
@@ -362,19 +419,23 @@ export function Dashboard({ defaultTab = 'quests' }) {
       return;
     }
 
-    // Toggle: if currently true -> false; if currently false -> true
-    const targetEquipped = !targetItem.equipped;
+    // Toggle if not explicitly specified
+    const targetEquipped = targetEquippedOverride !== undefined 
+      ? Boolean(targetEquippedOverride) 
+      : !targetItem.equipped;
+
     const category = targetItem?.item?.category;
+    const effectiveRoomId = targetEquipped ? (targetRoomId || activeRoom?.id) : null;
 
     // Optimistic UI update
     setInventory((prev) =>
       prev.map((inv) => {
         if (inv.id === inventoryId) {
-          return { ...inv, equipped: targetEquipped };
+          return { ...inv, equipped: targetEquipped, room_id: effectiveRoomId };
         }
         // Auto-unequip other companions if equipping a companion
         if (targetEquipped && category === 'companion' && inv.item?.category === 'companion') {
-          return { ...inv, equipped: false };
+          return { ...inv, equipped: false, room_id: null };
         }
         return inv;
       })
@@ -387,7 +448,10 @@ export function Dashboard({ defaultTab = 'quests' }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ equipped: targetEquipped })
+        body: JSON.stringify({
+          equipped: targetEquipped,
+          room_id: effectiveRoomId
+        })
       });
 
       const data = await res.json();
@@ -398,7 +462,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
         prev.map((inv) => {
           if (inv.id === inventoryId) return data.inventory;
           if (targetEquipped && category === 'companion' && inv.item?.category === 'companion' && inv.id !== inventoryId) {
-            return { ...inv, equipped: false };
+            return { ...inv, equipped: false, room_id: null };
           }
           return inv;
         })
@@ -458,8 +522,21 @@ export function Dashboard({ defaultTab = 'quests' }) {
         triggerRef={activeTriggerRef}
       />
 
-      {/* Achievement Unlock Banner — shows after level-up modal closes */}
+      {/* Room Unlock Celebration Modal — sequenced directly after Level-up modal closes */}
       {!showCelebration && (
+        <RoomUnlockModal
+          isOpen={Boolean(currentUnlockedRoom)}
+          onClose={() => setCurrentUnlockedRoom(null)}
+          room={currentUnlockedRoom}
+          onNavigateToRoom={(room) => {
+            handleSelectRoom(room);
+            handleTabSwitch('room');
+          }}
+        />
+      )}
+
+      {/* Achievement Unlock Banner — sequenced after Level-up AND Room Unlock modals */}
+      {!showCelebration && !currentUnlockedRoom && (
         <AchievementBanner
           achievement={currentAchievement}
           onDismiss={() => setCurrentAchievement(null)}
@@ -704,6 +781,10 @@ export function Dashboard({ defaultTab = 'quests' }) {
             <Suspense fallback={<RoomSkeleton />}>
               <MyRoom
                 inventory={inventory}
+                rooms={rooms}
+                activeRoom={activeRoom}
+                onSelectRoom={handleSelectRoom}
+                userLevel={char.level}
                 onToggleEquip={handleToggleEquip}
                 equippingId={equippingId}
                 onNavigateToShop={() => handleTabSwitch('shop')}

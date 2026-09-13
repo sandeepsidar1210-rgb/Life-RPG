@@ -31,12 +31,20 @@ async function runMigration() {
     await client.connect();
     console.log('[Migration] Connected successfully.');
 
-    const sqlPath = path.resolve(__dirname, '../../supabase/migrations/20260912000001_initial_schema.sql');
-    const sql = fs.readFileSync(sqlPath, 'utf8');
+    const migrationsDir = path.resolve(__dirname, '../../supabase/migrations');
+    const migrationFiles = fs.readdirSync(migrationsDir)
+      .filter((file) => file.endsWith('.sql'))
+      .sort();
 
-    console.log('[Migration] Executing migration...');
-    await client.query(sql);
-    console.log('[Migration] Migration executed successfully!');
+    console.log(`[Migration] Found ${migrationFiles.length} migration files:`, migrationFiles);
+
+    for (const file of migrationFiles) {
+      const filePath = path.join(migrationsDir, file);
+      console.log(`[Migration] Executing ${file}...`);
+      const sql = fs.readFileSync(filePath, 'utf8');
+      await client.query(sql);
+      console.log(`[Migration] ✓ ${file} executed successfully.`);
+    }
 
     // Run verification
     console.log('\n--- VERIFYING TABLES AND RLS STATUS ---');
@@ -47,7 +55,7 @@ async function runMigration() {
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' 
-        AND c.relname IN ('characters', 'quests', 'streaks', 'items', 'inventory')
+        AND c.relname IN ('characters', 'quests', 'streaks', 'items', 'inventory', 'achievements', 'user_achievements', 'rooms')
       ORDER BY c.relname;
     `);
 
@@ -55,6 +63,9 @@ async function runMigration() {
 
     const itemsCount = await client.query(`SELECT count(*) FROM public.items;`);
     console.log(`\nSeed items count: ${itemsCount.rows[0].count}`);
+
+    const roomsCount = await client.query(`SELECT count(*) FROM public.rooms;`);
+    console.log(`Seed rooms count: ${roomsCount.rows[0].count}`);
 
   } catch (err) {
     console.error('[Migration Error]', err.message);

@@ -54,7 +54,7 @@ async function verifyWithSupabaseAPI() {
   }
 
   console.log('[Supabase API] Verifying tables, RLS, and seed catalog via Supabase REST API...\n');
-  const tables = ['characters', 'quests', 'streaks', 'items', 'inventory'];
+  const tables = ['characters', 'quests', 'streaks', 'items', 'inventory', 'achievements', 'user_achievements', 'rooms'];
   const tableStatus = [];
 
   for (const table of tables) {
@@ -75,7 +75,7 @@ async function verifyWithSupabaseAPI() {
     const { data: anonData, error: anonErr } = await supabase.from(table).select('*').limit(1);
 
     let rlsNote = 'Active & Enforced';
-    if (table === 'items') {
+    if (table === 'items' || table === 'achievements' || table === 'rooms') {
       rlsNote = (anonData && !anonErr) ? 'Public Read Permitted (Catalog)' : 'Restricted';
     } else {
       // In private tables, unauthenticated anon should receive 0 rows
@@ -93,14 +93,21 @@ async function verifyWithSupabaseAPI() {
   console.table(tableStatus);
 
   // Check Seed Items
-  const { data: items, error: itemsErr } = await supabaseAdmin.from('items').select('name, category, cost').order('cost', { ascending: true });
+  const { data: items } = await supabaseAdmin.from('items').select('name, category, cost').order('cost', { ascending: true });
   if (items && items.length > 0) {
     console.log(`\n3. Seed Items Catalog (${items.length} items loaded):`);
     console.table(items);
+  }
+
+  // Check Seed Rooms
+  const { data: rooms } = await supabaseAdmin.from('rooms').select('name, unlock_level, display_order').order('display_order', { ascending: true });
+  if (rooms && rooms.length > 0) {
+    console.log(`\n4. Seed Rooms Catalog (${rooms.length} chambers loaded):`);
+    console.table(rooms);
     return true;
   }
 
-  return false;
+  return Boolean(items && items.length > 0);
 }
 
 async function main() {

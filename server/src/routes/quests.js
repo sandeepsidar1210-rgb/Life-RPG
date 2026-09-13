@@ -448,10 +448,26 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
 
     if (updateQuestErr) throw updateQuestErr;
 
-    // f. Check & award achievements (non-blocking — failures never crash the response)
+    // f. Check for newly unlocked rooms upon leveling up
+    let newlyUnlockedRooms = [];
+    if (leveledUp) {
+      try {
+        const { data: unlockedRoomsData } = await client
+          .from('rooms')
+          .select('*')
+          .gt('unlock_level', character.level || 1)
+          .lte('unlock_level', level)
+          .order('unlock_level', { ascending: true });
+        newlyUnlockedRooms = unlockedRoomsData || [];
+      } catch (rErr) {
+        console.warn('[Room Unlock Check Warn]', rErr.message);
+      }
+    }
+
+    // g. Check & award achievements (non-blocking — failures never crash the response)
     const newAchievements = await checkAchievements(userId, client);
 
-    // g. Return full updated data and celebration indicators
+    // h. Return full updated data and celebration indicators
     return res.status(200).json({
       message: 'Quest completed successfully!',
       quest: updatedQuest,
@@ -466,7 +482,8 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
         attribute: quest.attribute_type,
         attribute_increase: 1
       },
-      newAchievements
+      newAchievements,
+      newlyUnlockedRooms
     });
 
   } catch (err) {

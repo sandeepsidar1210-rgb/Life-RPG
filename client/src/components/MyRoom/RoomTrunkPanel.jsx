@@ -13,21 +13,44 @@ const ITEM_ICONS = {
   'Midnight Oil Badge': '🌙'
 };
 
-const ITEM_HINTS = {
-  'Warm Desk Lamp': 'Desk (Amber Point Light)',
-  'Ceremonial Matcha Bowl': 'Desk (Steaming Matcha)',
-  'Lo-Fi Cassette Player': 'Desk (Spinning Tape Reels)',
-  'Potted Succulent': 'Window Sill (Jade Succulent)',
-  'Zen Bonsai Tree': 'Display Pedestal (Foliage)',
-  'Oak Bookshelf': 'Back Wall (Books & Crystal)',
-  'Sleepy Calico Cat': 'Center Rug (Breathing Idle)',
-  'Wise Study Owl': 'Rustic Perch (Inquisitive Head)',
-  'Dawn Scholar Badge': 'Scholar Profile / Header HUD',
-  'Midnight Oil Badge': 'Scholar Profile / Header HUD'
+const getItemHint = (itemName, roomName = '') => {
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  if (itemName === 'Warm Desk Lamp') {
+    return isReadingNook ? 'Reading Side Table (Amber Lamp)' : isGardenBalcony ? 'Bistro Table (Terrace Lantern)' : 'Desk (Warm Golden Glow)';
+  }
+  if (itemName === 'Ceremonial Matcha Bowl') {
+    return isReadingNook ? 'Side Table (Steaming Matcha by Armchair)' : isGardenBalcony ? 'Bistro Table (Fresh Mountain Tea)' : 'Desk (Frothy Matcha)';
+  }
+  if (itemName === 'Lo-Fi Cassette Player') {
+    return isReadingNook ? 'Bookshelf Shelf (Library Melodies)' : isGardenBalcony ? 'Bistro Table (Terrace Tunes)' : 'Desk (Spinning Reels)';
+  }
+  if (itemName === 'Potted Succulent') {
+    return isReadingNook ? 'Twilight Window Sill' : isGardenBalcony ? 'Stone Planter Ledge' : 'Desk Window / Ledge';
+  }
+  if (itemName === 'Zen Bonsai Tree') {
+    return isReadingNook ? 'Library Corner Pedestal' : isGardenBalcony ? 'Terrace Garden Pedestal' : 'Display Pedestal';
+  }
+  if (itemName === 'Oak Bookshelf') {
+    return isReadingNook ? 'Library Wall Alcove' : isGardenBalcony ? 'Covered Terrace Alcove' : 'Wall Bookshelf';
+  }
+  if (itemName === 'Sleepy Calico Cat') {
+    return isReadingNook ? 'Plush Emerald Rug' : isGardenBalcony ? 'Sunlit Terracotta Pavers' : 'Cozy Woven Rug';
+  }
+  if (itemName === 'Wise Study Owl') {
+    return isReadingNook ? 'Twilight Perch' : isGardenBalcony ? 'Balcony Corner Perch' : 'Rustic Perch';
+  }
+  if (itemName?.includes('Badge')) {
+    return 'Scholar Profile / Header HUD';
+  }
+  return roomName;
 };
 
 export function RoomTrunkPanel({
   inventory = [],
+  rooms = [],
+  activeRoom,
   onToggleEquip,
   equippingId,
   isSimulatingFailure,
@@ -47,6 +70,9 @@ export function RoomTrunkPanel({
     return inv.item?.category === activeCategory;
   });
 
+  const roomName = activeRoom?.name || 'Study Desk';
+  const activeRoomId = activeRoom?.id;
+
   return (
     <section 
       aria-labelledby="trunk-heading"
@@ -59,7 +85,7 @@ export function RoomTrunkPanel({
             <span aria-hidden="true">🧳</span> Scholar's Trunk
           </h3>
           <p className="text-xs text-cozy-brown-medium">
-            Toggle items to animate them into your 3D study sanctuary
+            Placing decor into: <strong className="text-cozy-brown-dark">{roomName}</strong>
           </p>
         </div>
 
@@ -115,25 +141,67 @@ export function RoomTrunkPanel({
         ) : (
           filteredItems.map((inv) => {
             const item = inv.item;
-            const isEquipped = inv.equipped;
+            const isEquipped = Boolean(inv.equipped);
             const isEquipping = equippingId === inv.id;
             const isCompanion = item?.category === 'companion';
             const isBadge = item?.category === 'badge';
 
-            const actionLabel = isEquipped
-              ? `Unequip ${item?.name}`
-              : isCompanion
-              ? `Summon ${item?.name} into 3D study room`
-              : isBadge
-              ? `Display ${item?.name} in header HUD`
-              : `Place ${item?.name} into 3D study room`;
+            // Room-scoped states: unassigned decor defaults cleanly to Study Desk (display_order 1)
+            const defaultRoomId = (rooms || []).find((r) => r.display_order === 1)?.id || rooms[0]?.id;
+            const itemRoomId = inv.room_id || defaultRoomId;
+            const isEquippedInThisRoom = isEquipped && itemRoomId === activeRoomId;
+            const isEquippedInOtherRoom = isEquipped && itemRoomId !== activeRoomId;
+            const otherRoomName = inv.room?.name || (rooms || []).find((r) => r.id === itemRoomId)?.name || 'another chamber';
+
+            let actionText = 'Place';
+            let buttonStyle = 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
+
+            if (isCompanion) {
+              actionText = isEquipped ? 'Rest' : 'Summon';
+              if (isEquipped) {
+                buttonStyle = 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-cozy-terracotta-dark';
+              }
+            } else if (isBadge) {
+              actionText = isEquipped ? 'Hide' : 'Display';
+              if (isEquipped) {
+                buttonStyle = 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-cozy-terracotta-dark';
+              }
+            } else {
+              // Decor item
+              if (isEquippedInThisRoom) {
+                actionText = 'Recall';
+                buttonStyle = 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-cozy-terracotta-dark';
+              } else if (isEquippedInOtherRoom) {
+                actionText = 'Move Here';
+                buttonStyle = 'bg-cozy-parchment hover:bg-cozy-sage text-cozy-brown-dark hover:text-white border-cozy-sage-dark';
+              } else {
+                actionText = 'Place';
+                buttonStyle = 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
+              }
+            }
+
+            const handleItemClick = () => {
+              if (isCompanion || isBadge) {
+                onToggleEquip(inv.id, activeRoomId, !isEquipped);
+              } else {
+                if (isEquippedInThisRoom) {
+                  // Unequip from this room
+                  onToggleEquip(inv.id, activeRoomId, false);
+                } else {
+                  // Place or move to this room
+                  onToggleEquip(inv.id, activeRoomId, true);
+                }
+              }
+            };
 
             return (
               <div
                 key={inv.id}
                 className={`p-3 rounded-pixel border-2 transition flex items-center justify-between gap-3 ${
-                  isEquipped
+                  isEquippedInThisRoom || (isCompanion && isEquipped)
                     ? 'bg-cozy-parchment/90 border-cozy-sage-dark shadow-pixel-sm'
+                    : isEquippedInOtherRoom
+                    ? 'bg-cozy-parchment/70 border-cozy-border hover:border-cozy-brown-light'
                     : 'bg-cozy-parchment/40 border-cozy-border hover:border-cozy-brown-light'
                 }`}
               >
@@ -141,7 +209,7 @@ export function RoomTrunkPanel({
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={`w-11 h-11 rounded-pixel flex items-center justify-center text-xl flex-shrink-0 border-2 ${
-                      isEquipped
+                      isEquippedInThisRoom || (isCompanion && isEquipped)
                         ? 'bg-cozy-sage-subtle border-cozy-sage-dark'
                         : 'bg-cozy-card border-cozy-border'
                     }`}
@@ -155,9 +223,19 @@ export function RoomTrunkPanel({
                       <span className="font-pixel text-xs sm:text-sm font-bold text-cozy-brown-dark truncate">
                         {item?.name}
                       </span>
-                      {isEquipped && (
+                      {isEquippedInThisRoom && (
                         <span className="px-1.5 py-0.2 bg-cozy-sage text-white text-[9px] font-pixel rounded uppercase font-bold flex-shrink-0">
-                          Active
+                          Placed
+                        </span>
+                      )}
+                      {isEquippedInOtherRoom && (
+                        <span className="px-1.5 py-0.2 bg-cozy-brown-light/40 text-cozy-brown-dark text-[9px] font-pixel rounded uppercase font-bold flex-shrink-0" title={`Currently in ${otherRoomName}`}>
+                          In {otherRoomName}
+                        </span>
+                      )}
+                      {isCompanion && isEquipped && (
+                        <span className="px-1.5 py-0.2 bg-cozy-sage text-white text-[9px] font-pixel rounded uppercase font-bold flex-shrink-0">
+                          Summoned
                         </span>
                       )}
                     </div>
@@ -165,31 +243,23 @@ export function RoomTrunkPanel({
                       {item?.description}
                     </p>
                     <p className="text-[10px] text-cozy-sage-dark font-pixel mt-0.5">
-                      📍 {ITEM_HINTS[item?.name] || (isBadge ? 'Profile Header' : 'Study Room')}
+                      📍 {getItemHint(item?.name, roomName)}
                     </p>
                   </div>
                 </div>
 
-                {/* Equip / Unequip Toggle Button with minimum 44px touch target */}
+                {/* Equip / Unequip Toggle Button */}
                 <button
                   type="button"
-                  onClick={() => onToggleEquip(inv.id, isEquipped)}
+                  onClick={handleItemClick}
                   disabled={isEquipping}
-                  aria-label={actionLabel}
-                  className={`touch-target pixel-box px-3.5 py-2 rounded text-xs font-pixel font-bold transition flex-shrink-0 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cozy-brown-dark ${
-                    isEquipped
-                      ? 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-2 border-cozy-terracotta-dark'
-                      : 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-2 border-cozy-sage-dark shadow-pixel-sm'
-                  }`}
+                  aria-label={`${actionText} ${item?.name}`}
+                  className={`touch-target pixel-box px-3.5 py-2 rounded text-xs font-pixel font-bold transition flex-shrink-0 disabled:opacity-50 border-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cozy-brown-dark ${buttonStyle}`}
                 >
                   {isEquipping ? (
                     <span className="inline-block animate-spin" aria-label="Processing equipment change">⏳</span>
-                  ) : isEquipped ? (
-                    'Unequip'
-                  ) : isCompanion ? (
-                    'Summon'
                   ) : (
-                    'Place'
+                    actionText
                   )}
                 </button>
               </div>
@@ -202,9 +272,11 @@ export function RoomTrunkPanel({
       <div className="text-[11px] text-cozy-brown-medium bg-cozy-parchment/60 p-2.5 rounded-pixel border border-cozy-border flex items-start gap-2">
         <span className="text-sm select-none" aria-hidden="true">💡</span>
         <span>
-          <strong>Decor</strong> coexists in the 3D room. <strong>Companions</strong> are exclusive (equipping one summons it and rests the other). <strong>Badges</strong> display in your header HUD!
+          <strong>Decor</strong> is placed specifically in <em>{roomName}</em>. <strong>Companions</strong> join you wherever you study!
         </span>
       </div>
     </section>
   );
 }
+
+export default RoomTrunkPanel;

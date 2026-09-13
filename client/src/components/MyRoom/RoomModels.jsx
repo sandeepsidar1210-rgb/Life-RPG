@@ -179,12 +179,439 @@ export function RoomBase() {
 }
 
 /**
+ * ReadingNookBase
+ * Unlocked at Level 5.
+ * Rich Oxford library atmosphere: dark walnut herringbone floor, deep forest green walls,
+ * grand arched mahogany bookcase with rows of scholarly tomes, velvet reading armchair,
+ * and a romantic dusk twilight window with glowing crescent moon and stars.
+ */
+export function ReadingNookBase() {
+  return (
+    <group>
+      {/* --- Dark Walnut Herringbone Floor --- */}
+      <mesh position={[0, -0.15, 0]}>
+        <boxGeometry args={[7.6, 0.3, 7.6]} />
+        <FlatMat color="#3D2617" roughness={0.65} />
+      </mesh>
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[7.4, 7.4]} />
+        <meshBasicMaterial color="#2E1B0E" wireframe={true} transparent={true} opacity={0.3} />
+      </mesh>
+
+      {/* --- Back Wall (Deep Forest Library Green) --- */}
+      <mesh position={[0, 2.5, -3.7]}>
+        <boxGeometry args={[7.6, 5.0, 0.2]} />
+        <FlatMat color="#1E382B" roughness={0.92} />
+      </mesh>
+      {/* Wall Picture Rail / Gold Moulding */}
+      <mesh position={[0, 4.2, -3.58]}>
+        <boxGeometry args={[7.6, 0.12, 0.08]} />
+        <FlatMat color="#C69E52" metalness={0.4} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.15, -3.55]}>
+        <boxGeometry args={[7.6, 0.3, 0.1]} />
+        <FlatMat color="#2B180D" />
+      </mesh>
+
+      {/* --- Grand Built-in Mahogany Bookshelf along Back Wall --- */}
+      <group position={[-1.2, 2.3, -3.45]}>
+        {/* Frame Outer */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[4.2, 4.4, 0.45]} />
+          <FlatMat color="#422513" />
+        </mesh>
+        {/* Bookshelf Cavity */}
+        <mesh position={[0, 0, 0.06]}>
+          <boxGeometry args={[3.9, 4.1, 0.38]} />
+          <FlatMat color="#261409" />
+        </mesh>
+        {/* Shelves */}
+        {[-1.3, -0.5, 0.3, 1.1].map((y, idx) => (
+          <mesh key={idx} position={[0, y, 0.08]}>
+            <boxGeometry args={[3.9, 0.1, 0.4]} />
+            <FlatMat color="#502E19" />
+          </mesh>
+        ))}
+        {/* Decorative Rows of Books */}
+        {/* Shelf 1 */}
+        <group position={[-1.4, -1.05, 0.15]}>
+          {[
+            { c: '#8E2828', w: 0.14, h: 0.45 },
+            { c: '#B8860B', w: 0.12, h: 0.48 },
+            { c: '#274C77', w: 0.16, h: 0.42 },
+            { c: '#2D6A4F', w: 0.13, h: 0.46 },
+            { c: '#6B4226', w: 0.15, h: 0.4 },
+            { c: '#78290F', w: 0.12, h: 0.47 },
+          ].map((b, i) => (
+            <mesh key={i} position={[i * 0.18, 0, 0]}>
+              <boxGeometry args={[b.w, b.h, 0.28]} />
+              <FlatMat color={b.c} />
+            </mesh>
+          ))}
+        </group>
+        {/* Shelf 2 */}
+        <group position={[-0.8, -0.25, 0.15]}>
+          {[
+            { c: '#403D39', w: 0.15, h: 0.44 },
+            { c: '#D4A373', w: 0.14, h: 0.41 },
+            { c: '#588157', w: 0.13, h: 0.47 },
+            { c: '#9A031E', w: 0.16, h: 0.49 },
+            { c: '#1E3D59', w: 0.14, h: 0.43 },
+          ].map((b, i) => (
+            <mesh key={i} position={[i * 0.19, 0, 0]}>
+              <boxGeometry args={[b.w, b.h, 0.28]} />
+              <FlatMat color={b.c} />
+            </mesh>
+          ))}
+        </group>
+        {/* Shelf 3 */}
+        <group position={[-1.3, 0.55, 0.15]}>
+          {[
+            { c: '#14213D', w: 0.15, h: 0.46 },
+            { c: '#FCA311', w: 0.12, h: 0.43 },
+            { c: '#386641', w: 0.14, h: 0.48 },
+            { c: '#6F1D1B', w: 0.16, h: 0.44 },
+            { c: '#99582A', w: 0.13, h: 0.41 },
+          ].map((b, i) => (
+            <mesh key={i} position={[i * 0.18, 0, 0]}>
+              <boxGeometry args={[b.w, b.h, 0.28]} />
+              <FlatMat color={b.c} />
+            </mesh>
+          ))}
+        </group>
+      </group>
+
+      {/* --- Left Wall (Oxford Midnight Slate) --- */}
+      <mesh position={[-3.7, 2.5, 0]}>
+        <boxGeometry args={[0.2, 5.0, 7.6]} />
+        <FlatMat color="#1B263B" roughness={0.9} />
+      </mesh>
+      <mesh position={[-3.55, 0.15, 0]}>
+        <boxGeometry args={[0.1, 0.3, 7.6]} />
+        <FlatMat color="#2B180D" />
+      </mesh>
+
+      {/* --- Arched Twilight / Dusk Window on Left Wall --- */}
+      <group position={[-3.58, 2.9, 0.3]}>
+        {/* Window Frame */}
+        <mesh position={[0.02, 0, 0]}>
+          <boxGeometry args={[0.1, 2.8, 2.1]} />
+          <FlatMat color="#4A2E1B" />
+        </mesh>
+        {/* Twilight Sky Backing */}
+        <mesh position={[0.04, 0, 0]}>
+          <boxGeometry args={[0.04, 2.5, 1.8]} />
+          <FlatMat color="#2A1B4E" roughness={0.3} emissive="#3B2668" emissiveIntensity={0.5} />
+        </mesh>
+        {/* Window Bars */}
+        <mesh position={[0.06, 0, 0]}>
+          <boxGeometry args={[0.03, 2.5, 0.08]} />
+          <FlatMat color="#4A2E1B" />
+        </mesh>
+        <mesh position={[0.06, 0.2, 0]}>
+          <boxGeometry args={[0.03, 0.08, 1.8]} />
+          <FlatMat color="#4A2E1B" />
+        </mesh>
+        {/* Crescent Moon in Night Sky */}
+        <group position={[0.05, 0.65, -0.3]}>
+          <mesh rotation={[0, Math.PI / 2, 0]}>
+            <torusGeometry args={[0.2, 0.06, 8, 24, Math.PI * 1.3]} />
+            <FlatMat color="#FFFBEB" emissive="#FFF4C4" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
+        {/* Glowing Distant Stars */}
+        {[
+          [0.05, 0.7, 0.4],
+          [0.05, 0.3, -0.5],
+          [0.05, -0.4, 0.3],
+          [0.05, -0.6, -0.2],
+        ].map(([x, y, z], i) => (
+          <mesh key={i} position={[x, y, z]}>
+            <boxGeometry args={[0.02, 0.05, 0.05]} />
+            <FlatMat color="#FFE8A3" emissive="#FFE8A3" emissiveIntensity={1} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* --- Victorian Emerald & Gold Rug --- */}
+      <group position={[0.2, 0.015, 0.9]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[3.2, 2.6]} />
+          <FlatMat color="#194D33" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[2.8, 2.2]} />
+          <FlatMat color="#D4AF37" roughness={0.8} />
+        </mesh>
+        <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[2.5, 1.9]} />
+          <FlatMat color="#133C27" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* --- Plush Velvet Reading Armchair --- */}
+      <group position={[-0.6, 0, 0.8]} rotation={[0, 0.4, 0]}>
+        {/* Seat Base */}
+        <mesh position={[0, 0.6, 0]}>
+          <boxGeometry args={[1.3, 0.35, 1.2]} />
+          <FlatMat color="#8B2635" roughness={0.85} />
+        </mesh>
+        {/* Plush Seat Cushion */}
+        <mesh position={[0, 0.82, 0.05]}>
+          <boxGeometry args={[1.15, 0.18, 1.05]} />
+          <FlatMat color="#9E2A3B" roughness={0.9} />
+        </mesh>
+        {/* High Tufted Backrest */}
+        <mesh position={[0, 1.35, -0.48]} rotation={[-0.1, 0, 0]}>
+          <boxGeometry args={[1.25, 1.1, 0.28]} />
+          <FlatMat color="#8B2635" roughness={0.85} />
+        </mesh>
+        {/* Left Armrest */}
+        <mesh position={[-0.65, 0.95, 0.02]}>
+          <boxGeometry args={[0.22, 0.45, 1.15]} />
+          <FlatMat color="#781D2B" />
+        </mesh>
+        {/* Right Armrest */}
+        <mesh position={[0.65, 0.95, 0.02]}>
+          <boxGeometry args={[0.22, 0.45, 1.15]} />
+          <FlatMat color="#781D2B" />
+        </mesh>
+        {/* 4 Turned Wooden Legs */}
+        {[
+          [-0.55, 0.22, -0.45],
+          [0.55, 0.22, -0.45],
+          [-0.55, 0.22, 0.45],
+          [0.55, 0.22, 0.45],
+        ].map(([x, y, z], i) => (
+          <mesh key={i} position={[x, y, z]}>
+            <cylinderGeometry args={[0.06, 0.04, 0.45, 10]} />
+            <FlatMat color="#3D2111" />
+          </mesh>
+        ))}
+        {/* Cozy Throw Pillow */}
+        <mesh position={[0.25, 0.95, -0.28]} rotation={[0.2, 0.3, 0.1]}>
+          <boxGeometry args={[0.45, 0.4, 0.18]} />
+          <FlatMat color="#D4A373" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* --- Reading Side Table with Hot Tea --- */}
+      <group position={[1.1, 0, 0.5]}>
+        {/* Table Top */}
+        <mesh position={[0, 0.95, 0]}>
+          <cylinderGeometry args={[0.55, 0.55, 0.08, 24]} />
+          <FlatMat color="#502E19" roughness={0.6} />
+        </mesh>
+        {/* Pedestal & Base */}
+        <mesh position={[0, 0.5, 0]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.9, 12]} />
+          <FlatMat color="#3D2111" />
+        </mesh>
+        <mesh position={[0, 0.06, 0]}>
+          <cylinderGeometry args={[0.45, 0.45, 0.1, 16]} />
+          <FlatMat color="#3D2111" />
+        </mesh>
+        {/* Saucer & Steaming Tea Mug */}
+        <mesh position={[0, 1.01, 0]}>
+          <cylinderGeometry args={[0.2, 0.16, 0.03, 16]} />
+          <FlatMat color="#F5EBE0" />
+        </mesh>
+        <mesh position={[0, 1.11, 0]}>
+          <cylinderGeometry args={[0.12, 0.1, 0.18, 16]} />
+          <FlatMat color="#E3D5CA" />
+        </mesh>
+        <mesh position={[0, 1.18, 0]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.02, 16]} />
+          <FlatMat color="#6F4E37" />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * GardenBalconyBase
+ * Unlocked at Level 10.
+ * Breezy Mediterranean terrace: weathered terracotta pavers, open-air classical stone balustrade,
+ * rolling emerald hills vista, climbing flowering ivy, stone planter ledge, and wrought-iron bistro table.
+ */
+export function GardenBalconyBase() {
+  return (
+    <group>
+      {/* --- Weathered Terracotta Paver Floor --- */}
+      <mesh position={[0, -0.15, 0]}>
+        <boxGeometry args={[7.6, 0.3, 7.6]} />
+        <FlatMat color="#B85D3B" roughness={0.8} />
+      </mesh>
+      {/* Stone Tile Seams */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[7.4, 7.4]} />
+        <meshBasicMaterial color="#944528" wireframe={true} transparent={true} opacity={0.35} />
+      </mesh>
+
+      {/* --- Open Panoramic Vista Backdrop (Rolling Green Hills & Blue Sky) --- */}
+      <group position={[0, 2.5, -4.2]}>
+        {/* Azure Horizon Sky */}
+        <mesh position={[0, 1.2, 0]}>
+          <planeGeometry args={[12, 7]} />
+          <FlatMat color="#60A5FA" emissive="#3B82F6" emissiveIntensity={0.4} />
+        </mesh>
+        {/* Distant Rolling Hills Layer 1 */}
+        <mesh position={[1.5, -0.5, 0.1]} rotation={[0, 0, -0.05]}>
+          <cylinderGeometry args={[6, 6, 2.5, 32, 1, false, 0, Math.PI]} />
+          <FlatMat color="#4D7C0F" />
+        </mesh>
+        {/* Distant Rolling Hills Layer 2 */}
+        <mesh position={[-2.5, -0.7, 0.2]} rotation={[0, 0, 0.08]}>
+          <cylinderGeometry args={[5, 5, 2.2, 32, 1, false, 0, Math.PI]} />
+          <FlatMat color="#365314" />
+        </mesh>
+      </group>
+
+      {/* --- Classical Stone Balustrade (Back Railing) --- */}
+      <group position={[0, 0, -3.4]}>
+        {/* Bottom Rail Plinth */}
+        <mesh position={[0, 0.2, 0]}>
+          <boxGeometry args={[7.6, 0.4, 0.45]} />
+          <FlatMat color="#D6CEBE" roughness={0.85} />
+        </mesh>
+        {/* Top Handrail */}
+        <mesh position={[0, 1.35, 0]}>
+          <boxGeometry args={[7.6, 0.25, 0.5]} />
+          <FlatMat color="#E5DFD3" roughness={0.8} />
+        </mesh>
+        {/* Baluster Pillars */}
+        {[-3.2, -2.4, -1.6, -0.8, 0, 0.8, 1.6, 2.4, 3.2].map((x, i) => (
+          <group key={i} position={[x, 0.78, 0]}>
+            <mesh position={[0, 0, 0]}>
+              <cylinderGeometry args={[0.12, 0.09, 0.85, 12]} />
+              <FlatMat color="#DCD5C7" />
+            </mesh>
+            <mesh position={[0, 0.15, 0]}>
+              <sphereGeometry args={[0.16, 12, 8]} />
+              <FlatMat color="#DCD5C7" />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* --- Left Wall: Rustic Sandstone Wall with Ivy Vines --- */}
+      <group position={[-3.7, 2.5, 0]}>
+        <mesh>
+          <boxGeometry args={[0.25, 5.0, 7.6]} />
+          <FlatMat color="#C9BAA5" roughness={0.95} />
+        </mesh>
+        {/* Stone Moulding Trim */}
+        <mesh position={[0.15, 1.8, 0]}>
+          <boxGeometry args={[0.1, 0.2, 7.6]} />
+          <FlatMat color="#DFD4C2" />
+        </mesh>
+        {/* Climbing Ivy Vine Groups */}
+        {[
+          { y: 0.8, z: -1.2, s: 0.7 },
+          { y: 1.4, z: -0.7, s: 0.9 },
+          { y: 2.1, z: -1.0, s: 0.8 },
+          { y: 1.0, z: 0.5, s: 0.75 },
+          { y: 1.8, z: 0.8, s: 0.85 },
+          { y: 2.6, z: 0.3, s: 0.7 },
+        ].map((v, i) => (
+          <group key={i} position={[0.14, v.y, v.z]} scale={v.s}>
+            <mesh rotation={[0, 0, Math.PI / 4]}>
+              <boxGeometry args={[0.04, 0.5, 0.5]} />
+              <FlatMat color="#3A6335" />
+            </mesh>
+            <mesh position={[0.02, 0.1, 0]} rotation={[0, 0, -Math.PI / 6]}>
+              <boxGeometry args={[0.04, 0.4, 0.4]} />
+              <FlatMat color="#4E7C47" />
+            </mesh>
+            {/* Violet blossom cluster */}
+            <mesh position={[0.04, 0.15, 0.1]}>
+              <sphereGeometry args={[0.08, 8, 6]} />
+              <FlatMat color="#A855F7" />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* --- Stone Planter Boxes along the Balustrade --- */}
+      <group position={[-2.2, 0.45, -3.1]}>
+        <mesh>
+          <boxGeometry args={[1.8, 0.45, 0.6]} />
+          <FlatMat color="#C4B8A6" />
+        </mesh>
+        {/* Soil & Foliage */}
+        <mesh position={[0, 0.24, 0]}>
+          <boxGeometry args={[1.7, 0.08, 0.5]} />
+          <FlatMat color="#3D291C" />
+        </mesh>
+        {[-0.6, -0.2, 0.2, 0.6].map((px, idx) => (
+          <group key={idx} position={[px, 0.4, 0]}>
+            <mesh>
+              <sphereGeometry args={[0.22, 10, 8]} />
+              <FlatMat color={idx % 2 === 0 ? '#437A3B' : '#558B2F'} />
+            </mesh>
+            <mesh position={[0, 0.18, 0]}>
+              <sphereGeometry args={[0.09, 8, 6]} />
+              <FlatMat color={idx % 2 === 0 ? '#F43F5E' : '#FB7185'} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* --- Wrought-Iron Garden Bistro Table --- */}
+      <group position={[0.3, 0, 0.2]}>
+        {/* Marble Table Top */}
+        <mesh position={[0, 1.25, 0]}>
+          <cylinderGeometry args={[1.1, 1.1, 0.08, 28]} />
+          <FlatMat color="#EFECE6" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 1.21, 0]}>
+          <cylinderGeometry args={[1.12, 1.12, 0.03, 28]} />
+          <FlatMat color="#2B3A2C" />
+        </mesh>
+        {/* Pedestal Stand */}
+        <mesh position={[0, 0.6, 0]}>
+          <cylinderGeometry args={[0.08, 0.12, 1.2, 12]} />
+          <FlatMat color="#2B3A2C" />
+        </mesh>
+        {/* 4 Curved Legs */}
+        {[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle, i) => (
+          <mesh key={i} position={[Math.cos(angle) * 0.4, 0.18, Math.sin(angle) * 0.4]} rotation={[0, angle, 0.35]}>
+            <boxGeometry args={[0.08, 0.45, 0.08]} />
+            <FlatMat color="#2B3A2C" />
+          </mesh>
+        ))}
+        {/* Scholar's Cartography Map Unrolled on Balcony Table */}
+        <mesh position={[0.1, 1.3, 0.05]} rotation={[-Math.PI / 2, 0, 0.2]}>
+          <planeGeometry args={[0.9, 0.6]} />
+          <FlatMat color="#F5ECD7" roughness={0.9} />
+        </mesh>
+        {/* Crystal Paperweight */}
+        <mesh position={[0.4, 1.35, 0.15]}>
+          <octahedronGeometry args={[0.1]} />
+          <FlatMat color="#93C5FD" roughness={0.1} emissive="#60A5FA" emissiveIntensity={0.3} transparent={true} opacity={0.8} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
  * 1. Warm Desk Lamp
  * Brass base, curved stem, terracotta shade, warm emissive bulb + point light.
  */
-export function DeskLampModel() {
+export function DeskLampModel({ roomName = 'Study Desk' }) {
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isReadingNook 
+    ? [1.25, 0.95, 0.3] 
+    : isGardenBalcony 
+    ? [-0.2, 1.25, -0.1] 
+    : [-1.0, 1.4, -0.5];
+
   return (
-    <group position={[-1.0, 1.4, -0.5]}>
+    <group position={position}>
       {/* Heavy Brass Base */}
       <mesh position={[0, 0.03, 0]}>
         <cylinderGeometry args={[0.2, 0.22, 0.06, 16]} />
@@ -233,9 +660,18 @@ export function DeskLampModel() {
  * 2. Ceremonial Matcha Bowl
  * Earthy ceramic bowl, vibrant frothy matcha, bamboo whisk, and bobbing steam puffs.
  */
-export function MatchaBowlModel() {
+export function MatchaBowlModel({ roomName = 'Study Desk' }) {
   const steamRef1 = useRef();
   const steamRef2 = useRef();
+
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isReadingNook 
+    ? [0.85, 0.95, 0.55] 
+    : isGardenBalcony 
+    ? [0.1, 1.25, 0.35] 
+    : [-0.45, 1.4, -0.1];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -250,7 +686,7 @@ export function MatchaBowlModel() {
   });
 
   return (
-    <group position={[-0.45, 1.4, -0.1]}>
+    <group position={position}>
       {/* Ceramic Chawan Bowl */}
       <mesh position={[0, 0.09, 0]}>
         <cylinderGeometry args={[0.22, 0.16, 0.18, 18]} />
@@ -285,9 +721,18 @@ export function MatchaBowlModel() {
  * 3. Lo-Fi Cassette Player
  * Retro dual-tone cassette boombox with animated spinning spools and buttons.
  */
-export function LoFiCassettePlayerModel() {
+export function LoFiCassettePlayerModel({ roomName = 'Study Desk' }) {
   const spool1Ref = useRef();
   const spool2Ref = useRef();
+
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isReadingNook 
+    ? [-0.1, 1.8, -3.3] 
+    : isGardenBalcony 
+    ? [0.55, 1.25, -0.05] 
+    : [0.45, 1.4, -0.45];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime() * 4;
@@ -296,7 +741,7 @@ export function LoFiCassettePlayerModel() {
   });
 
   return (
-    <group position={[0.45, 1.4, -0.45]}>
+    <group position={position}>
       {/* Main Vintage Casing */}
       <mesh position={[0, 0.16, 0]}>
         <boxGeometry args={[0.65, 0.32, 0.36]} />
@@ -352,9 +797,18 @@ export function LoFiCassettePlayerModel() {
  * 4. Potted Succulent
  * Terracotta pot, dark soil, clustered geometric jade leaves. Positioned cleanly on the study desk.
  */
-export function PottedSucculentModel() {
+export function PottedSucculentModel({ roomName = 'Study Desk' }) {
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isReadingNook 
+    ? [-3.48, 1.5, 0.3] 
+    : isGardenBalcony 
+    ? [-1.4, 0.7, -3.1] 
+    : [1.05, 1.4, 0.15];
+
   return (
-    <group position={[1.05, 1.4, 0.15]}>
+    <group position={position}>
       {/* Terracotta Planter */}
       <mesh position={[0, 0.12, 0]}>
         <cylinderGeometry args={[0.14, 0.1, 0.24, 14]} />
@@ -396,9 +850,15 @@ export function PottedSucculentModel() {
  * 5. Zen Bonsai Tree
  * Wooden display pedestal, ceramic tray, gnarled winding trunk, and vibrant moss canopies.
  */
-export function ZenBonsaiTreeModel() {
+export function ZenBonsaiTreeModel({ roomName = 'Study Desk' }) {
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isGardenBalcony 
+    ? [-2.2, 0, 0.8] 
+    : [-2.4, 0, 1.2];
+
   return (
-    <group position={[-2.4, 0, 1.2]}>
+    <group position={position}>
       {/* Wood Display Pedestal */}
       <mesh position={[0, 0.3, 0]}>
         <boxGeometry args={[0.85, 0.6, 0.85]} />
@@ -455,9 +915,15 @@ export function ZenBonsaiTreeModel() {
  * 6. Oak Bookshelf
  * Tall solid oak shelving unit against the back wall, packed with colorful books and scholar crystal.
  */
-export function OakBookshelfModel() {
+export function OakBookshelfModel({ roomName = 'Study Desk' }) {
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isGardenBalcony 
+    ? [2.5, 0, -2.8] 
+    : [2.5, 0, -3.3];
+
   return (
-    <group position={[2.5, 0, -3.3]}>
+    <group position={position}>
       {/* Wooden Case Frame */}
       <mesh position={[0, 1.8, 0]}>
         <boxGeometry args={[1.6, 3.6, 0.55]} />
@@ -534,8 +1000,17 @@ export function OakBookshelfModel() {
  * 7. Sleepy Calico Cat (Companion)
  * Curled up comfortably on the floor rug, with rhythmic breathing idle animation via useFrame.
  */
-export function SleepyCalicoCatModel() {
+export function SleepyCalicoCatModel({ roomName = 'Study Desk' }) {
   const catRef = useRef();
+
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  const position = isReadingNook 
+    ? [0.15, 0.05, 0.85] 
+    : isGardenBalcony 
+    ? [0.75, 0.05, 0.95] 
+    : [0.35, 0.05, 1.1];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -547,7 +1022,7 @@ export function SleepyCalicoCatModel() {
   });
 
   return (
-    <group position={[0.35, 0.05, 1.1]}>
+    <group position={position}>
       <group ref={catRef}>
         {/* Curled Body (Calico Cream Base) */}
         <mesh position={[0, 0.14, 0]} rotation={[0, 0.3, 0]}>
@@ -600,9 +1075,15 @@ export function SleepyCalicoCatModel() {
  * 8. Wise Study Owl (Companion)
  * Perched on a rustic wooden stand, with gentle idle breathing and inquisitive head rotations.
  */
-export function WiseStudyOwlModel() {
+export function WiseStudyOwlModel({ roomName = 'Study Desk' }) {
   const headRef = useRef();
   const bodyRef = useRef();
+
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+
+  const position = isReadingNook 
+    ? [-2.4, 0, -1.8] 
+    : [-2.4, 0, -2.2];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -617,7 +1098,7 @@ export function WiseStudyOwlModel() {
   });
 
   return (
-    <group position={[-2.4, 0, -2.2]}>
+    <group position={position}>
       {/* Rustic Wooden Perch Stand */}
       <mesh position={[0, 1.0, 0]}>
         <cylinderGeometry args={[0.05, 0.07, 2.0, 8]} />

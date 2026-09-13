@@ -2,25 +2,49 @@ import React, { useState, useMemo } from 'react';
 import { RoomCanvas } from './MyRoom/RoomCanvas.jsx';
 import { CanvasErrorBoundary } from './MyRoom/CanvasErrorBoundary.jsx';
 import { RoomTrunkPanel } from './MyRoom/RoomTrunkPanel.jsx';
+import { RoomSwitcher } from './MyRoom/RoomSwitcher.jsx';
 
 /**
  * MyRoom
- * Main 3D study sanctuary container.
+ * Main 3D study sanctuary container with multi-room progression.
  * Lazy-loaded and wrapped in Suspense and CanvasErrorBoundary.
  */
-export function MyRoom({ inventory = [], onToggleEquip, equippingId, onNavigateToShop }) {
+export function MyRoom({
+  inventory = [],
+  rooms = [],
+  activeRoom = null,
+  onSelectRoom,
+  userLevel = 1,
+  onToggleEquip,
+  equippingId,
+  onNavigateToShop
+}) {
   const [simulateWebGLFailure, setSimulateWebGLFailure] = useState(false);
 
   const ownedItems = inventory || [];
-  const equippedItems = useMemo(
-    () => ownedItems.filter((item) => item.equipped),
-    [ownedItems]
+
+  const defaultRoomId = useMemo(() => {
+    return (rooms || []).find((r) => r.display_order === 1)?.id || rooms[0]?.id;
+  }, [rooms]);
+
+  // Filter items placed in the active room (companions join in any room, badges are profile-scoped)
+  const roomEquippedItems = useMemo(
+    () => ownedItems.filter((item) => {
+      if (!item.equipped) return false;
+      if (item.item?.category === 'badge') return false;
+      if (item.item?.category === 'companion') return true;
+      const effectiveRoomId = item.room_id || defaultRoomId;
+      return effectiveRoomId === activeRoom?.id;
+    }),
+    [ownedItems, activeRoom?.id, defaultRoomId]
   );
 
   const equippedNames = useMemo(
-    () => new Set(equippedItems.map((inv) => inv.item?.name)),
-    [equippedItems]
+    () => new Set(roomEquippedItems.map((inv) => inv.item?.name)),
+    [roomEquippedItems]
   );
+
+  const roomName = activeRoom?.name || 'Study Desk';
 
   // Empty state if user owns 0 items
   if (ownedItems.length === 0) {
@@ -62,27 +86,40 @@ export function MyRoom({ inventory = [], onToggleEquip, equippingId, onNavigateT
             <span aria-hidden="true">🛋️</span> 3D Study Sanctuary
           </h2>
           <p className="text-xs text-cozy-brown-medium">
-            Interactive low-poly 3D room powered by React Three Fiber • Click trunk items to spawn with spring bounce
+            Multiple unlockable chambers • {roomName} • Low-poly 3D powered by React Three Fiber
           </p>
         </div>
 
-        <div className="text-xs font-pixel bg-cozy-parchment px-3 py-1.5 rounded-pixel border-2 border-cozy-border">
-          <span className="text-cozy-sage-dark font-bold">{equippedItems.length}</span> / {ownedItems.length} Placed
+        <div className="text-xs font-pixel bg-cozy-parchment px-3 py-1.5 rounded-pixel border-2 border-cozy-border flex items-center gap-1.5">
+          <span className="text-cozy-sage-dark font-bold">{roomEquippedItems.length}</span>
+          <span>Placed in {roomName}</span>
         </div>
       </div>
+
+      {/* Multi-Room Switcher Tabs & Level Anticipation Hooks */}
+      {rooms.length > 0 && (
+        <RoomSwitcher
+          rooms={rooms}
+          activeRoomId={activeRoom?.id}
+          onSelectRoom={onSelectRoom}
+          inventory={ownedItems}
+          userLevel={userLevel}
+        />
+      )}
 
       {/* Main Grid: 3D Canvas + Side Trunk Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left / Top: 3D Viewport wrapped in Error Boundary */}
         <div className="lg:col-span-7 xl:col-span-8">
           <CanvasErrorBoundary
-            equippedItems={equippedItems}
+            equippedItems={roomEquippedItems}
             onToggleEquip={onToggleEquip}
             equippingId={equippingId}
             forceFallback={simulateWebGLFailure}
           >
             <RoomCanvas
               equippedNames={equippedNames}
+              roomName={roomName}
               simulateWebGLFailure={simulateWebGLFailure}
             />
           </CanvasErrorBoundary>
@@ -92,6 +129,8 @@ export function MyRoom({ inventory = [], onToggleEquip, equippingId, onNavigateT
         <div className="lg:col-span-5 xl:col-span-4">
           <RoomTrunkPanel
             inventory={ownedItems}
+            rooms={rooms}
+            activeRoom={activeRoom}
             onToggleEquip={onToggleEquip}
             equippingId={equippingId}
             isSimulatingFailure={simulateWebGLFailure}
