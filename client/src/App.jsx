@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ProtectedRoute } from './components/ProtectedRoute.jsx';
 import { AuthScreen } from './components/AuthScreen.jsx';
 import { Dashboard } from './components/Dashboard.jsx';
+import { NotFound } from './components/NotFound.jsx';
 
 export default function App() {
   return (
@@ -41,7 +42,9 @@ export default function App() {
 
           {/* Root redirect to Dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Themed 404 Route for Unmatched Paths */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

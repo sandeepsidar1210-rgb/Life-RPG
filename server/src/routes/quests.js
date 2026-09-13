@@ -18,11 +18,18 @@ router.post('/', requireAuth, async (req, res) => {
     const userId = req.user.id;
     let { title, description, attribute_type, focus_points_reward, cozy_coins_reward } = req.body;
 
-    // Validation: Reject empty or whitespace-only titles
+    // Validation: Reject empty, whitespace-only, or excessively long titles
     if (!title || typeof title !== 'string' || title.trim().length < 2) {
       return res.status(400).json({
         error: 'Validation Error',
         message: 'Quest title is required and must be at least 2 characters.'
+      });
+    }
+
+    if (title.trim().length > 200) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Quest title cannot exceed 200 characters.'
       });
     }
 
@@ -141,6 +148,12 @@ router.patch('/:id', requireAuth, async (req, res) => {
         return res.status(400).json({
           error: 'Validation Error',
           message: 'Quest title must be at least 2 characters.'
+        });
+      }
+      if (title.trim().length > 200) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Quest title cannot exceed 200 characters.'
         });
       }
       updates.title = title.trim();

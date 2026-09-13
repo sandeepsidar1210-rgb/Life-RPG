@@ -74,6 +74,20 @@ export function Dashboard({ defaultTab = 'quests' }) {
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+  // Helper for offline & friendly error messaging
+  const getFriendlyErrorMessage = (err) => {
+    if (
+      (typeof navigator !== 'undefined' && !navigator.onLine) ||
+      err?.message?.includes('Failed to fetch') ||
+      err?.message?.includes('NetworkError') ||
+      err?.message?.includes('network') ||
+      err?.name === 'TypeError'
+    ) {
+      return "You're offline or connection was lost. Please check your internet connection and try again.";
+    }
+    return err?.message || 'Something went wrong. Please try again.';
+  };
+
   // Fetch initial profile, quests, inventory, and catalog
   useEffect(() => {
     let isSubscribed = true;
@@ -111,7 +125,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
         }
       } catch (err) {
         console.error('[Dashboard Load Error]', err);
-        addToast(err.message, 'error');
+        addToast(getFriendlyErrorMessage(err), 'error');
       } finally {
         if (isSubscribed) setLoading(false);
       }
@@ -142,7 +156,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
       setQuests((prev) => [data.quest, ...prev]);
       addToast(`Quest "${data.quest.title}" inscribed!`, 'success');
     } catch (err) {
-      addToast(err.message, 'error');
+      addToast(getFriendlyErrorMessage(err), 'error');
     }
   };
 
@@ -164,7 +178,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
       setQuests((prev) => prev.map((q) => (q.id === questId ? data.quest : q)));
       addToast('Quest updated successfully.', 'success');
     } catch (err) {
-      addToast(err.message, 'error');
+      addToast(getFriendlyErrorMessage(err), 'error');
     }
   };
 
@@ -186,12 +200,14 @@ export function Dashboard({ defaultTab = 'quests' }) {
       setQuests((prev) => prev.filter((q) => q.id !== questId));
       addToast('Quest removed from your scroll.', 'info');
     } catch (err) {
-      addToast(err.message, 'error');
+      addToast(getFriendlyErrorMessage(err), 'error');
     }
   };
 
   // 4. Complete Quest
   const handleCompleteQuest = async (questId) => {
+    // Prevent rapid double-clicking
+    if (completingId) return;
     setCompletingId(questId);
     activeTriggerRef.current = document.activeElement;
 
@@ -238,7 +254,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
       }
     } catch (err) {
-      addToast(err.message, 'error');
+      addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
       setCompletingId(null);
     }
@@ -246,6 +262,8 @@ export function Dashboard({ defaultTab = 'quests' }) {
 
   // 5. Purchase Item from Shop
   const handlePurchaseItem = async (item) => {
+    // Prevent rapid duplicate purchases
+    if (purchasingId) return;
     setPurchasingId(item.id);
     try {
       const res = await fetch(`${apiUrl}/api/items/${item.id}/purchase`, {
@@ -267,7 +285,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
 
       addToast(`Adopted "${item.name}"! Coins remaining: ${data.character.cozy_coins}`, 'success');
     } catch (err) {
-      addToast(err.message, 'error');
+      addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
       setPurchasingId(null);
     }
@@ -275,6 +293,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
 
   // 6. Equip / Unequip Item (with Optimistic UI and rollback)
   const handleToggleEquip = async (inventoryId) => {
+    if (equippingId) return;
     setEquippingId(inventoryId);
 
     // Save previous inventory for rollback
@@ -331,7 +350,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
     } catch (err) {
       // Rollback optimistic update
       setInventory(previousInventory);
-      addToast(err.message, 'error');
+      addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
       setEquippingId(null);
     }

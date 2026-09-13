@@ -83,12 +83,21 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
       </div>
 
       {/* Catalog Grid */}
-      <div 
-        id="catalog-items-grid" 
-        role="tabpanel"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        {filteredItems.map(item => {
+      {filteredItems.length === 0 ? (
+        <div className="pixel-box bg-cozy-card p-8 sm:p-10 rounded-pixel text-center space-y-3 border-dashed border-2 border-cozy-brown-light/40">
+          <span className="text-3xl select-none" aria-hidden="true">🧺</span>
+          <h3 className="font-pixel text-base text-cozy-brown-dark">No wares found in this section</h3>
+          <p className="text-xs text-cozy-brown-medium max-w-sm mx-auto">
+            The shopkeeper is currently restocking this shelf with new study furnishings and companions.
+          </p>
+        </div>
+      ) : (
+        <div 
+          id="catalog-items-grid" 
+          role="tabpanel"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          {filteredItems.map(item => {
           const isOwned = ownedItemIds.has(item.id);
           const canAfford = userCoins >= item.cost;
           const isPurchasing = purchasingId === item.id;
@@ -169,7 +178,8 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
             </motion.article>
           );
         })}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -17,6 +17,8 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
   const [cozyCoins, setCozyCoins] = useState(15);
   const [titleError, setTitleError] = useState('');
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Editing state
   const [editingQuest, setEditingQuest] = useState(null);
 
@@ -36,22 +38,31 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
       setTitleError('Quest title must be at least 2 characters.');
       return;
     }
+    if (title.trim().length > 200) {
+      setTitleError('Quest title cannot exceed 200 characters.');
+      return;
+    }
 
     setTitleError('');
-    await onCreate({
-      title: title.trim(),
-      description: description.trim() || null,
-      attribute_type: attributeType,
-      focus_points_reward: Number(focusPoints) || 25,
-      cozy_coins_reward: Number(cozyCoins) || 10,
-    });
+    setIsSubmitting(true);
+    try {
+      await onCreate({
+        title: title.trim(),
+        description: description.trim() || null,
+        attribute_type: attributeType,
+        focus_points_reward: Number(focusPoints) || 25,
+        cozy_coins_reward: Number(cozyCoins) || 10,
+      });
 
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setFocusPoints(30);
-    setCozyCoins(15);
-    setShowCreateForm(false);
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setFocusPoints(30);
+      setCozyCoins(15);
+      setShowCreateForm(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -127,6 +138,7 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
                 id="new-quest-title"
                 type="text"
                 required
+                maxLength={200}
                 aria-required="true"
                 aria-invalid={!!titleError}
                 aria-describedby={titleError ? "title-error-msg" : undefined}
@@ -251,9 +263,10 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
               </button>
               <button
                 type="submit"
-                className="touch-target pixel-box-interactive bg-cozy-sage hover:bg-cozy-sage-dark text-white font-pixel text-xs sm:text-sm px-5 py-2 rounded-pixel font-bold shadow-pixel-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark"
+                disabled={isSubmitting}
+                className="touch-target pixel-box-interactive bg-cozy-sage hover:bg-cozy-sage-dark text-white font-pixel text-xs sm:text-sm px-5 py-2 rounded-pixel font-bold shadow-pixel-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark disabled:opacity-50"
               >
-                Inscribe Quest
+                {isSubmitting ? 'Inscribing...' : 'Inscribe Quest'}
               </button>
             </div>
           </motion.form>
@@ -263,12 +276,21 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
       {/* Active Quests List */}
       <div className="space-y-3" role="feed" aria-busy={completingId !== null}>
         {activeQuests.length === 0 ? (
-          <div className="pixel-box bg-cozy-card p-8 rounded-pixel text-center space-y-2 border-dashed border-2 border-cozy-brown-light/40">
+          <div className="pixel-box bg-cozy-card p-8 sm:p-10 rounded-pixel text-center space-y-3 border-dashed border-2 border-cozy-brown-light/40">
             <span className="text-3xl select-none" aria-hidden="true">🪶</span>
             <h3 className="font-pixel text-base text-cozy-brown-dark">No active quests right now</h3>
             <p className="text-xs text-cozy-brown-medium max-w-sm mx-auto">
               Your study scroll is clear! Inscribe a task above to gain Focus Points, level up your stats, and earn Cozy Coins.
             </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(true)}
+                className="touch-target pixel-box-interactive bg-cozy-sage hover:bg-cozy-sage-dark text-white font-pixel text-xs sm:text-sm px-4 py-2.5 rounded-pixel font-bold shadow-pixel-sm transition focus-visible:outline-2 focus-visible:outline-cozy-brown-dark"
+              >
+                ➕ Inscribe Your First Quest
+              </button>
+            </div>
           </div>
         ) : (
           activeQuests.map((quest) => {
@@ -444,6 +466,7 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
                 id="edit-quest-title"
                 type="text"
                 required
+                maxLength={200}
                 value={editingQuest.title}
                 onChange={(e) => setEditingQuest({ ...editingQuest, title: e.target.value })}
                 className="w-full bg-cozy-parchment/60 border-2 border-cozy-brown-dark/70 rounded-pixel px-3 py-2 text-sm text-cozy-brown-dark focus:outline-none focus:border-cozy-sage-dark focus:ring-2 focus:ring-cozy-sage/40"
