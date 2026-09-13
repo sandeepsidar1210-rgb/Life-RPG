@@ -417,8 +417,22 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             onSubmit={handleEditSubmit}
-            className="w-full max-w-md pixel-box bg-cozy-card p-6 rounded-pixel shadow-pixel-lg border-2 border-cozy-brown-dark space-y-4"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                setEditingQuest(null);
+              }
+            }}
+            className="w-full max-w-md pixel-box bg-cozy-card p-6 rounded-pixel shadow-pixel-lg border-2 border-cozy-brown-dark space-y-4 relative"
           >
+            <button
+              type="button"
+              onClick={() => setEditingQuest(null)}
+              aria-label="Close edit quest modal"
+              className="absolute top-3 right-3 touch-target text-cozy-brown-medium hover:text-cozy-brown-dark font-pixel text-sm p-1 rounded hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-cozy-brown-dark"
+            >
+              ✕
+            </button>
             <h3 id="edit-modal-heading" className="font-pixel text-lg text-cozy-brown-dark flex items-center gap-2">
               <span aria-hidden="true">✏️</span> Edit Quest
             </h3>

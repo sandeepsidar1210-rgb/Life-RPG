@@ -36,7 +36,7 @@ export function ToastContainer({ toasts, onDismiss }) {
                 type="button"
                 onClick={() => onDismiss(toast.id)}
                 aria-label="Dismiss notification"
-                className="touch-target min-h-[32px] min-w-[32px] text-xs font-bold px-2 py-1 rounded hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cozy-brown-dark"
+                className="touch-target min-h-[44px] min-w-[44px] text-sm font-bold px-2.5 py-1.5 rounded hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cozy-brown-dark flex items-center justify-center"
               >
                 ✕
               </button>

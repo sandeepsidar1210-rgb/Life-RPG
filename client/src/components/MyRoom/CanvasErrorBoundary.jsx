@@ -56,7 +56,8 @@ export class CanvasErrorBoundary extends React.Component {
               <button
                 type="button"
                 onClick={this.handleRetry}
-                className="touch-target text-[11px] text-cozy-sage-dark hover:underline font-pixel"
+                aria-label="Try loading 3D study room again"
+                className="touch-target px-2.5 py-1 text-xs text-cozy-sage-dark hover:text-white hover:bg-cozy-sage rounded border border-cozy-sage-dark font-pixel transition shadow-pixel-sm focus-visible:outline-2 focus-visible:outline-cozy-brown-dark"
               >
                 🔄 Try 3D Again
               </button>

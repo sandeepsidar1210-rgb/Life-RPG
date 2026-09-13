@@ -84,6 +84,16 @@ export function CelebrationModal({ isOpen, onClose, levelData, triggerRef }) {
           transition={{ type: 'spring', damping: 18, stiffness: 260 }}
           className="relative w-full max-w-md pixel-box bg-cozy-card p-6 sm:p-8 rounded-pixel shadow-pixel-lg text-center overflow-hidden border-4 border-cozy-brown-dark"
         >
+          {/* Top-Right Dismiss Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close celebration modal"
+            className="absolute top-3 right-3 touch-target text-cozy-brown-medium hover:text-cozy-brown-dark font-pixel text-base p-1 rounded hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-cozy-brown-dark"
+          >
+            ✕
+          </button>
+
           {/* Confetti / Sparkles floating particles */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
             {['✨', '⭐', '🎉', '🍂', '🌟', '🪙'].map((emoji, i) => (
