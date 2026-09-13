@@ -44,6 +44,42 @@
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+[data-theme="dark"], .dark {
+  /* Cozy Evening Theme Core Palette */
+  --color-cream: #18141F;        /* Midnight plum hearth */
+  --color-parchment: #241D30;    /* Muted night slate */
+  --color-card: #2E253D;         /* Cozy night study card */
+  --color-border: #4D3F63;       /* Heather dusk border */
+
+  /* Text colors on dark */
+  --color-brown-dark: #FBF6EF;   /* Soft ivory parchment text (~13:1 contrast) */
+  --color-brown-medium: #DDD2C4; /* Warm parchment subtext (~9:1 contrast) */
+  --color-brown-light: #B7A898;  /* Muted warm grey */
+  --color-brown-subtle: #3B304D;
+  --color-brown-base: #F0E6D8;
+
+  /* Accents in dark mode */
+  --color-sage-base: #529E60;
+  --color-sage-dark: #A7D8B1;
+  --color-sage-light: #3D6B45;
+  --color-sage-subtle: #1E3423;
+
+  --color-terracotta-base: #E06C4D;
+  --color-terracotta-dark: #FCA58E;
+  --color-terracotta-light: #A03E22;
+  --color-terracotta-subtle: #3E1E16;
+
+  --color-gold-base: #E5A83B;
+  --color-gold-dark: #FBD57D;
+  --color-gold-light: #44320F;
+
+  /* Character Stats Tokens in Dark */
+  --color-stat-focus: #58A6DF;
+  --color-stat-discipline: #FBD57D;
+  --color-stat-vitality: #72C783;
+  --color-stat-creativity: #FCA58E;
+}
+
 @layer base {
   body {
     background-color: var(--color-cream);

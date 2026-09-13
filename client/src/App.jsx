@@ -1,12 +1,23 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { ScholarProvider } from './context/ScholarContext.jsx';
 import { ProtectedRoute } from './components/ProtectedRoute.jsx';
+import { Layout } from './components/Layout.jsx';
 
-// Code-split top-level routes to ensure minimal initial bundle for visitors
+// Code-split top-level routes and page components
 const AuthScreen = lazy(() => import('./components/AuthScreen.jsx').then(m => ({ default: m.AuthScreen })));
-const Dashboard = lazy(() => import('./components/Dashboard.jsx').then(m => ({ default: m.Dashboard })));
 const NotFound = lazy(() => import('./components/NotFound.jsx').then(m => ({ default: m.NotFound })));
+
+// Page views
+const DashboardOverview = lazy(() => import('./components/pages/DashboardOverview.jsx').then(m => ({ default: m.DashboardOverview })));
+const QuestsPage = lazy(() => import('./components/pages/QuestsPage.jsx').then(m => ({ default: m.QuestsPage })));
+const RoomPage = lazy(() => import('./components/pages/RoomPage.jsx').then(m => ({ default: m.RoomPage })));
+const ShopPage = lazy(() => import('./components/pages/ShopPage.jsx').then(m => ({ default: m.ShopPage })));
+const SpiritPage = lazy(() => import('./components/pages/SpiritPage.jsx').then(m => ({ default: m.SpiritPage })));
+const AchievementsPage = lazy(() => import('./components/pages/AchievementsPage.jsx').then(m => ({ default: m.AchievementsPage })));
+const ProfileJourney = lazy(() => import('./components/pages/ProfileJourney.jsx').then(m => ({ default: m.ProfileJourney })));
+const SettingsPage = lazy(() => import('./components/pages/SettingsPage.jsx').then(m => ({ default: m.SettingsPage })));
 
 function RouteLoadingFallback() {
   return (
@@ -34,47 +45,32 @@ export default function App() {
             {/* Public Authentication Route */}
             <Route path="/login" element={<AuthScreen />} />
 
-            {/* Protected Dashboard Routes */}
+            {/* Authenticated Application with Scholar Context & Persistent Layout */}
             <Route
-              path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard defaultTab="quests" />
+                  <ScholarProvider>
+                    <Layout />
+                  </ScholarProvider>
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="/dashboard/room"
-              element={
-                <ProtectedRoute>
-                  <Dashboard defaultTab="room" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/shop"
-              element={
-                <ProtectedRoute>
-                  <Dashboard defaultTab="shop" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/spirit"
-              element={
-                <ProtectedRoute>
-                  <Dashboard defaultTab="spirit" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/achievements"
-              element={
-                <ProtectedRoute>
-                  <Dashboard defaultTab="achievements" />
-                </ProtectedRoute>
-              }
-            />
+            >
+              <Route path="/dashboard" element={<DashboardOverview />} />
+              <Route path="/quests" element={<QuestsPage />} />
+              <Route path="/room" element={<RoomPage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/spirit" element={<SpiritPage />} />
+              <Route path="/achievements" element={<AchievementsPage />} />
+              <Route path="/profile" element={<ProfileJourney />} />
+              <Route path="/settings" element={<SettingsPage />} />
+
+              {/* Backward compatibility redirects for legacy subpaths */}
+              <Route path="/dashboard/quests" element={<Navigate to="/quests" replace />} />
+              <Route path="/dashboard/room" element={<Navigate to="/room" replace />} />
+              <Route path="/dashboard/shop" element={<Navigate to="/shop" replace />} />
+              <Route path="/dashboard/spirit" element={<Navigate to="/spirit" replace />} />
+              <Route path="/dashboard/achievements" element={<Navigate to="/achievements" replace />} />
+            </Route>
 
             {/* Root redirect to Dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
