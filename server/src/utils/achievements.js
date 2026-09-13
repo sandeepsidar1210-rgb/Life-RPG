@@ -40,6 +40,7 @@ export async function checkAchievements(userId, client) {
       { data: streakRow },
       { data: completedQuests },
       { data: inventoryItems },
+      { data: userSpirit }
     ] = await Promise.all([
       client.from('characters').select('*').eq('user_id', userId).single(),
       client.from('streaks').select('*').eq('user_id', userId).maybeSingle(),
@@ -49,12 +50,14 @@ export async function checkAchievements(userId, client) {
         .eq('user_id', userId)
         .eq('status', 'completed'),
       client.from('inventory').select('id').eq('user_id', userId),
+      client.from('user_spirits').select('current_stage').eq('user_id', userId).maybeSingle()
     ]);
 
     const questCount = completedQuests?.length ?? 0;
     const streakLength = streakRow?.current_streak ?? 0;
     const level = character?.level ?? 1;
     const itemCount = inventoryItems?.length ?? 0;
+    const spiritStage = userSpirit?.current_stage ?? 1;
 
     // 4. Evaluate each achievement against current state
     const toUnlock = [];
@@ -87,6 +90,10 @@ export async function checkAchievements(userId, client) {
 
         case 'item_count':
           met = itemCount >= ach.criteria_value;
+          break;
+
+        case 'spirit_stage':
+          met = spiritStage >= ach.criteria_value;
           break;
 
         default:

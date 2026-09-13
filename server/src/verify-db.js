@@ -54,7 +54,11 @@ async function verifyWithSupabaseAPI() {
   }
 
   console.log('[Supabase API] Verifying tables, RLS, and seed catalog via Supabase REST API...\n');
-  const tables = ['characters', 'quests', 'streaks', 'items', 'inventory', 'achievements', 'user_achievements', 'rooms'];
+  const tables = [
+    'characters', 'quests', 'streaks', 'items', 'inventory',
+    'achievements', 'user_achievements', 'rooms',
+    'spirit_species', 'spirit_stages', 'user_spirits'
+  ];
   const tableStatus = [];
 
   for (const table of tables) {
@@ -75,7 +79,7 @@ async function verifyWithSupabaseAPI() {
     const { data: anonData, error: anonErr } = await supabase.from(table).select('*').limit(1);
 
     let rlsNote = 'Active & Enforced';
-    if (table === 'items' || table === 'achievements' || table === 'rooms') {
+    if (table === 'items' || table === 'achievements' || table === 'rooms' || table === 'spirit_species' || table === 'spirit_stages') {
       rlsNote = (anonData && !anonErr) ? 'Public Read Permitted (Catalog)' : 'Restricted';
     } else {
       // In private tables, unauthenticated anon should receive 0 rows
@@ -104,6 +108,13 @@ async function verifyWithSupabaseAPI() {
   if (rooms && rooms.length > 0) {
     console.log(`\n4. Seed Rooms Catalog (${rooms.length} chambers loaded):`);
     console.table(rooms);
+  }
+
+  // Check Seed Spirit Species
+  const { data: spirits } = await supabaseAdmin.from('spirit_species').select('name, attribute_type').order('attribute_type', { ascending: true });
+  if (spirits && spirits.length > 0) {
+    console.log(`\n5. Study Spirits Species (${spirits.length} species loaded):`);
+    console.table(spirits);
     return true;
   }
 

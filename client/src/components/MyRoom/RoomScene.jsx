@@ -12,6 +12,7 @@ import {
   SleepyCalicoCatModel,
   WiseStudyOwlModel
 } from './RoomModels.jsx';
+import { SpiritCompanion } from './SpiritModels.jsx';
 import { AnimatedSpawnItem } from './AnimatedSpawnItem.jsx';
 
 /**
@@ -22,7 +23,7 @@ import { AnimatedSpawnItem } from './AnimatedSpawnItem.jsx';
  * - Reading Nook: Deep forest green library, glowing stars, dusk crescent moon, velvet armchair.
  * - Garden Balcony: Sunlit open-air terrace, classical balustrade, rolling hills, flowering ivy.
  */
-export function RoomScene({ equippedNames = new Set(), roomName = 'Study Desk' }) {
+export function RoomScene({ equippedNames = new Set(), roomName = 'Study Desk', spiritModelKey = null }) {
   const isEquipped = (name) => equippedNames.has(name);
 
   // Determine room theme
@@ -93,6 +94,11 @@ export function RoomScene({ equippedNames = new Set(), roomName = 'Study Desk' }
       <AnimatedSpawnItem isEquipped={isEquipped('Oak Bookshelf')}>
         <OakBookshelfModel roomName={roomName} />
       </AnimatedSpawnItem>
+
+      {/* --- Study Spirit Companion (Active Stage 3D Model) --- */}
+      {spiritModelKey && (
+        <SpiritCompanion modelKey={spiritModelKey} roomName={roomName} />
+      )}
 
       {/* --- 3D Equippable Companions (Animated) --- */}
       <AnimatedSpawnItem isEquipped={isEquipped('Sleepy Calico Cat')}>

@@ -11,6 +11,7 @@ import { RoomScene } from './RoomScene.jsx';
 export function RoomCanvas({
   equippedNames = new Set(),
   roomName = 'Study Desk',
+  spiritModelKey = null,
   simulateWebGLFailure = false,
   onResetView
 }) {
@@ -119,7 +120,7 @@ export function RoomCanvas({
         }}
       >
         {/* Low-Poly 3D Sanctuary Room & Equippables */}
-        <RoomScene equippedNames={equippedNames} roomName={roomName} />
+        <RoomScene equippedNames={equippedNames} roomName={roomName} spiritModelKey={spiritModelKey} />
 
         <OrbitControls
           ref={controlsRef}

@@ -7,6 +7,7 @@ import itemsRouter from './routes/items.js';
 import inventoryRouter from './routes/inventory.js';
 import achievementsRouter from './routes/achievements.js';
 import roomsRouter from './routes/rooms.js';
+import spiritRouter from './routes/spirit.js';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/items', itemsRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/achievements', achievementsRouter);
 app.use('/api/rooms', roomsRouter);
+app.use('/api/spirit', spiritRouter);
 
 // Root informational endpoint
 app.get('/', (req, res) => {
@@ -61,7 +63,8 @@ app.get('/', (req, res) => {
       items: '/api/items',
       inventory: '/api/inventory',
       achievements: '/api/achievements',
-      rooms: '/api/rooms'
+      rooms: '/api/rooms',
+      spirit: '/api/spirit'
     }
   });
 });

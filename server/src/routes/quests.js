@@ -2,6 +2,7 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
 import { checkAchievements } from '../utils/achievements.js';
+import { determineHighestAttribute, FALLBACK_SPECIES, FALLBACK_STAGES } from './spirit.js';
 
 const router = express.Router();
 
@@ -464,10 +465,91 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
       }
     }
 
-    // g. Check & award achievements (non-blocking — failures never crash the response)
+    // g. Check for study spirit evolution upon leveling up (Stage 2 @ Lv 5, Stage 3 @ Lv 12)
+    let spiritEvolution = null;
+    if (leveledUp) {
+      try {
+        const { data: userSpirit } = await client
+          .from('user_spirits')
+          .select('*, species:spirit_species(*)')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (userSpirit && userSpirit.current_stage < 3) {
+          const currentStage = userSpirit.current_stage;
+          let targetStage = currentStage;
+
+          if (level >= 12 && currentStage < 3) {
+            targetStage = 3;
+          } else if (level >= 5 && currentStage < 2) {
+            targetStage = 2;
+          }
+
+          if (targetStage > currentStage) {
+            const { data: updatedSpirit, error: spiritUpdateErr } = await client
+              .from('user_spirits')
+              .update({ current_stage: targetStage })
+              .eq('id', userSpirit.id)
+              .select('*, species:spirit_species(*)')
+              .single();
+
+            if (!spiritUpdateErr && updatedSpirit) {
+              const { data: stageInfo } = await client
+                .from('spirit_stages')
+                .select('*')
+                .eq('species_id', updatedSpirit.species_id)
+                .eq('stage_number', targetStage)
+                .maybeSingle();
+
+              const { data: prevStageInfo } = await client
+                .from('spirit_stages')
+                .select('*')
+                .eq('species_id', updatedSpirit.species_id)
+                .eq('stage_number', currentStage)
+                .maybeSingle();
+
+              spiritEvolution = {
+                evolved: true,
+                previousStage: currentStage,
+                newStage: targetStage,
+                species: updatedSpirit.species,
+                stageData: stageInfo,
+                previousStageData: prevStageInfo
+              };
+            }
+          }
+        }
+      } catch (sErr) {
+        console.warn('[Spirit Evolution Check Warn]', sErr.message);
+      }
+
+      // Resilient fallback if DB query returned null or failed
+      if (!spiritEvolution) {
+        const prevLevel = level - (levelsGained || 1);
+        const crossed5 = prevLevel < 5 && level >= 5;
+        const crossed12 = prevLevel < 12 && level >= 12;
+        if (crossed5 || crossed12) {
+          const targetStage = level >= 12 ? 3 : 2;
+          const prevStage = targetStage === 3 ? (prevLevel >= 5 ? 2 : 1) : 1;
+          const dominantAttr = determineHighestAttribute(updatedCharacter);
+          const spec = FALLBACK_SPECIES[dominantAttr];
+          const stgs = FALLBACK_STAGES[dominantAttr];
+          spiritEvolution = {
+            evolved: true,
+            previousStage: prevStage,
+            newStage: targetStage,
+            species: spec,
+            stageData: stgs.find(s => s.stage_number === targetStage),
+            previousStageData: stgs.find(s => s.stage_number === prevStage)
+          };
+        }
+      }
+    }
+
+    // h. Check & award achievements (non-blocking — failures never crash the response)
     const newAchievements = await checkAchievements(userId, client);
 
-    // h. Return full updated data and celebration indicators
+    // i. Return full updated data and celebration indicators
     return res.status(200).json({
       message: 'Quest completed successfully!',
       quest: updatedQuest,
@@ -483,7 +565,8 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
         attribute_increase: 1
       },
       newAchievements,
-      newlyUnlockedRooms
+      newlyUnlockedRooms,
+      spiritEvolution
     });
 
   } catch (err) {

@@ -55,7 +55,11 @@ async function runMigration() {
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' 
-        AND c.relname IN ('characters', 'quests', 'streaks', 'items', 'inventory', 'achievements', 'user_achievements', 'rooms')
+        AND c.relname IN (
+          'characters', 'quests', 'streaks', 'items', 'inventory',
+          'achievements', 'user_achievements', 'rooms',
+          'spirit_species', 'spirit_stages', 'user_spirits'
+        )
       ORDER BY c.relname;
     `);
 

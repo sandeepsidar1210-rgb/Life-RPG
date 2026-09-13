@@ -77,6 +77,17 @@ router.get('/me', requireAuth, async (req, res) => {
 
     if (invError) throw invError;
 
+    // 4. Fetch user's bound study spirit
+    let spirit = null;
+    try {
+      const { data: userSpirit } = await client
+        .from('user_spirits')
+        .select('*, species:spirit_species(*)')
+        .eq('user_id', userId)
+        .maybeSingle();
+      spirit = userSpirit;
+    } catch (_) {}
+
     return res.status(200).json({
       user: {
         id: req.user.id,
@@ -84,7 +95,8 @@ router.get('/me', requireAuth, async (req, res) => {
       },
       character,
       streak,
-      inventory: inventory || []
+      inventory: inventory || [],
+      spirit
     });
 
   } catch (err) {

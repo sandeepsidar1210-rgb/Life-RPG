@@ -60,6 +60,14 @@ export default function App() {
               }
             />
             <Route
+              path="/dashboard/spirit"
+              element={
+                <ProtectedRoute>
+                  <Dashboard defaultTab="spirit" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/dashboard/achievements"
               element={
                 <ProtectedRoute>

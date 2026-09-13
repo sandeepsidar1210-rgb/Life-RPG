@@ -7,12 +7,16 @@ import { CelebrationModal } from './CelebrationModal.jsx';
 import { ToastContainer } from './Toast.jsx';
 import { AchievementBanner } from './AchievementBanner.jsx';
 import { RoomUnlockModal } from './RoomUnlockModal.jsx';
+import { SpiritEvolutionModal } from './SpiritEvolutionModal.jsx';
 
 // Code-split major views so Three.js, Shop, and Quest assets are loaded on demand
 const QuestList = React.lazy(() => import('./QuestList.jsx').then(m => ({ default: m.QuestList })));
 const ShopCatalog = React.lazy(() => import('./ShopCatalog.jsx').then(m => ({ default: m.ShopCatalog })));
 const MyRoom = React.lazy(() => import('./MyRoom.jsx'));
 const AchievementsGrid = React.lazy(() => import('./AchievementsGrid.jsx').then(m => ({ default: m.AchievementsGrid })));
+const SpiritPanel = React.lazy(() => import('./SpiritPanel.jsx').then(m => ({ default: m.SpiritPanel })));
+
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function TabLoadingFallback({ message = "Gathering wares..." }) {
   return (
@@ -28,23 +32,19 @@ export function Dashboard({ defaultTab = 'quests' }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine active tab from URL path or default prop
-  const getTabFromPath = () => {
+  // Determine active tab directly from URL path or default prop
+  const activeTab = (() => {
+    if (location.pathname.includes('/spirit')) return 'spirit';
     if (location.pathname.includes('/room')) return 'room';
     if (location.pathname.includes('/shop')) return 'shop';
     if (location.pathname.includes('/achievements')) return 'achievements';
     return defaultTab || 'quests';
-  };
-
-  const [activeTab, setActiveTab] = useState(getTabFromPath());
-
-  useEffect(() => {
-    setActiveTab(getTabFromPath());
-  }, [location.pathname]);
+  })();
 
   const handleTabSwitch = (tab) => {
-    setActiveTab(tab);
-    if (tab === 'room') {
+    if (tab === 'spirit') {
+      navigate('/dashboard/spirit');
+    } else if (tab === 'room') {
       navigate('/dashboard/room');
     } else if (tab === 'shop') {
       navigate('/dashboard/shop');
@@ -61,6 +61,11 @@ export function Dashboard({ defaultTab = 'quests' }) {
   const [items, setItems] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Study Spirit companion state & celebration queue
+  const [spirit, setSpirit] = useState(null);
+  const [spiritEvolutionQueue, setSpiritEvolutionQueue] = useState([]);
+  const [currentSpiritEvolution, setCurrentSpiritEvolution] = useState(null);
 
   // Multi-room state
   const [rooms, setRooms] = useState([]);
@@ -108,8 +113,6 @@ export function Dashboard({ defaultTab = 'quests' }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
   // Helper for offline & friendly error messaging
   const getFriendlyErrorMessage = (err) => {
     if (
@@ -134,12 +137,13 @@ export function Dashboard({ defaultTab = 'quests' }) {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        const [meRes, questsRes, itemsRes, invRes, roomsRes] = await Promise.all([
+        const [meRes, questsRes, itemsRes, invRes, roomsRes, spiritRes] = await Promise.all([
           fetch(`${apiUrl}/api/me`, { headers }),
           fetch(`${apiUrl}/api/quests`, { headers }),
           fetch(`${apiUrl}/api/items`),
           fetch(`${apiUrl}/api/inventory`, { headers }),
-          fetch(`${apiUrl}/api/rooms`, { headers })
+          fetch(`${apiUrl}/api/rooms`, { headers }),
+          fetch(`${apiUrl}/api/spirit`, { headers })
         ]);
 
         if (!meRes.ok) throw new Error('Could not fetch profile');
@@ -157,11 +161,19 @@ export function Dashboard({ defaultTab = 'quests' }) {
         let roomsData = { rooms: [] };
         if (roomsRes.ok) roomsData = await roomsRes.json();
 
+        let spiritData = null;
+        if (spiritRes && spiritRes.ok) spiritData = await spiritRes.json();
+
         if (isSubscribed) {
           setProfile(meData);
           setQuests(questsData.quests || []);
           setItems(itemsData.items || []);
           setInventory(invData.inventory || meData.inventory || []);
+          if (spiritData) {
+            setSpirit(spiritData);
+          } else if (meData.spirit) {
+            setSpirit(meData.spirit);
+          }
 
           const fetchedRooms = roomsData.rooms || [];
           setRooms(fetchedRooms);
@@ -194,43 +206,76 @@ export function Dashboard({ defaultTab = 'quests' }) {
     };
   }, [token]);
 
-  // 1. Room unlock celebration queue: shows after level-up modal closes
-  useEffect(() => {
-    if (showCelebration) return;
-    if (!currentUnlockedRoom && roomUnlockQueue.length > 0) {
+  // Sequenced modal dismissal handlers: Level-Up -> Spirit Evolution -> Room Unlock -> Achievement Banner
+  const handleCelebrationClose = useCallback(() => {
+    setShowCelebration(false);
+    if (spiritEvolutionQueue.length > 0) {
+      const [next, ...rest] = spiritEvolutionQueue;
+      setCurrentSpiritEvolution(next);
+      setSpiritEvolutionQueue(rest);
+    } else if (roomUnlockQueue.length > 0) {
       const [next, ...rest] = roomUnlockQueue;
       setCurrentUnlockedRoom(next);
       setRoomUnlockQueue(rest);
-    }
-  }, [currentUnlockedRoom, roomUnlockQueue, showCelebration]);
-
-  // 2. Achievement banner queue: shows after BOTH level-up modal AND room unlock modal are closed
-  useEffect(() => {
-    // Wait until level-up modal AND room unlock modal are closed
-    if (showCelebration || currentUnlockedRoom) return;
-    if (!currentAchievement && achievementQueue.length > 0) {
+    } else if (achievementQueue.length > 0) {
       const [next, ...rest] = achievementQueue;
       setCurrentAchievement(next);
       setAchievementQueue(rest);
     }
-  }, [currentAchievement, achievementQueue, showCelebration, currentUnlockedRoom]);
+  }, [spiritEvolutionQueue, roomUnlockQueue, achievementQueue]);
+
+  const handleSpiritEvolutionClose = useCallback(() => {
+    setCurrentSpiritEvolution(null);
+    if (roomUnlockQueue.length > 0) {
+      const [next, ...rest] = roomUnlockQueue;
+      setCurrentUnlockedRoom(next);
+      setRoomUnlockQueue(rest);
+    } else if (achievementQueue.length > 0) {
+      const [next, ...rest] = achievementQueue;
+      setCurrentAchievement(next);
+      setAchievementQueue(rest);
+    }
+  }, [roomUnlockQueue, achievementQueue]);
+
+  const handleRoomUnlockClose = useCallback(() => {
+    setCurrentUnlockedRoom(null);
+    if (roomUnlockQueue.length > 0) {
+      const [next, ...rest] = roomUnlockQueue;
+      setCurrentUnlockedRoom(next);
+      setRoomUnlockQueue(rest);
+    } else if (achievementQueue.length > 0) {
+      const [next, ...rest] = achievementQueue;
+      setCurrentAchievement(next);
+      setAchievementQueue(rest);
+    }
+  }, [roomUnlockQueue, achievementQueue]);
+
+  const handleAchievementDismiss = useCallback(() => {
+    if (achievementQueue.length > 0) {
+      const [next, ...rest] = achievementQueue;
+      setCurrentAchievement(next);
+      setAchievementQueue(rest);
+    } else {
+      setCurrentAchievement(null);
+    }
+  }, [achievementQueue]);
 
   /**
-   * Enqueue newly unlocked achievements to show after the level-up modal closes.
-   * If a level-up is in progress, we delay by watching showCelebration.
+   * Enqueue newly unlocked achievements or show immediately if no modal is active.
    */
   const addAchievementNotifications = useCallback((newAchs) => {
     if (!newAchs || newAchs.length === 0) return;
-    // Track for the achievements grid to update without a full refetch
     setFreshAchievements((prev) => [...prev, ...newAchs]);
-    // Enqueue the banners
-    setAchievementQueue((prev) => [...prev, ...newAchs]);
-  }, []);
-
-  // When celebration modal closes, allow the achievement banner queue to drain
-  const handleCelebrationClose = useCallback(() => {
-    setShowCelebration(false);
-  }, []);
+    if (!showCelebration && !currentSpiritEvolution && !currentUnlockedRoom && !currentAchievement) {
+      const [first, ...rest] = newAchs;
+      setCurrentAchievement(first);
+      if (rest.length > 0) {
+        setAchievementQueue((prev) => [...prev, ...rest]);
+      }
+    } else {
+      setAchievementQueue((prev) => [...prev, ...newAchs]);
+    }
+  }, [showCelebration, currentSpiritEvolution, currentUnlockedRoom, currentAchievement]);
 
   // 1. Create Quest
   const handleCreateQuest = async (questData) => {
@@ -346,6 +391,22 @@ export function Dashboard({ defaultTab = 'quests' }) {
 
       if (data.streakIncreased) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
+      }
+
+      // If spirit evolved upon leveling up, update spirit state & enqueue evolution celebration modal
+      if (data.spiritEvolution?.evolved) {
+        setSpirit((prev) => ({
+          ...prev,
+          current_stage: data.spiritEvolution.stageData || {
+            stage_number: data.spiritEvolution.newStage,
+            name: data.spiritEvolution.stageData?.name
+          },
+          spirit: {
+            ...(prev?.spirit || {}),
+            current_stage: data.spiritEvolution.newStage
+          }
+        }));
+        setSpiritEvolutionQueue((prev) => [...prev, data.spiritEvolution]);
       }
 
       // If newly unlocked rooms resulted from leveling up, enqueue them for celebration
@@ -522,11 +583,24 @@ export function Dashboard({ defaultTab = 'quests' }) {
         triggerRef={activeTriggerRef}
       />
 
-      {/* Room Unlock Celebration Modal — sequenced directly after Level-up modal closes */}
+      {/* Spirit Evolution Celebration Modal — sequenced directly after Level-up modal closes */}
       {!showCelebration && (
+        <SpiritEvolutionModal
+          isOpen={Boolean(currentSpiritEvolution)}
+          onClose={handleSpiritEvolutionClose}
+          evolutionData={currentSpiritEvolution}
+          onInspectSpirit={() => {
+            handleSpiritEvolutionClose();
+            handleTabSwitch('spirit');
+          }}
+        />
+      )}
+
+      {/* Room Unlock Celebration Modal — sequenced after Level-up AND Spirit Evolution modals */}
+      {!showCelebration && !currentSpiritEvolution && (
         <RoomUnlockModal
           isOpen={Boolean(currentUnlockedRoom)}
-          onClose={() => setCurrentUnlockedRoom(null)}
+          onClose={handleRoomUnlockClose}
           room={currentUnlockedRoom}
           onNavigateToRoom={(room) => {
             handleSelectRoom(room);
@@ -535,11 +609,11 @@ export function Dashboard({ defaultTab = 'quests' }) {
         />
       )}
 
-      {/* Achievement Unlock Banner — sequenced after Level-up AND Room Unlock modals */}
-      {!showCelebration && !currentUnlockedRoom && (
+      {/* Achievement Unlock Banner — sequenced after Level-up, Spirit Evolution, AND Room Unlock modals */}
+      {!showCelebration && !currentSpiritEvolution && !currentUnlockedRoom && (
         <AchievementBanner
           achievement={currentAchievement}
-          onDismiss={() => setCurrentAchievement(null)}
+          onDismiss={handleAchievementDismiss}
         />
       )}
 
@@ -575,6 +649,20 @@ export function Dashboard({ defaultTab = 'quests' }) {
                     <span className="hidden sm:inline font-bold">{b.item?.name}</span>
                   </motion.span>
                 ))}
+
+                {/* Bound Study Spirit Companion Chip in Header */}
+                {spirit && (
+                  <button
+                    type="button"
+                    onClick={() => handleTabSwitch('spirit')}
+                    title={`Study Spirit: ${spirit.current_stage?.name || spirit.species?.name} (Stage ${spirit.current_stage?.stage_number || spirit.spirit?.current_stage || 1})`}
+                    className="px-2 py-0.5 bg-cozy-terracotta-subtle text-cozy-terracotta-dark hover:bg-cozy-terracotta hover:text-white text-[11px] font-pixel rounded border border-cozy-terracotta flex items-center gap-1 shadow-pixel-xs transition active:scale-95"
+                  >
+                    <span>✨</span>
+                    <span className="font-bold hidden sm:inline">{spirit.current_stage?.name || spirit.species?.name}</span>
+                    <span className="font-bold sm:hidden">Spirit</span>
+                  </button>
+                )}
               </div>
               <p className="text-xs text-cozy-brown-medium truncate max-w-[220px] sm:max-w-xs">
                 Scholar: <span className="font-semibold text-cozy-brown-dark">{user?.email}</span>
@@ -719,6 +807,21 @@ export function Dashboard({ defaultTab = 'quests' }) {
           <button
             type="button"
             role="tab"
+            aria-selected={activeTab === 'spirit'}
+            onClick={() => handleTabSwitch('spirit')}
+            className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
+              activeTab === 'spirit'
+                ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
+                : 'bg-cozy-parchment text-cozy-brown-medium hover:text-cozy-brown-dark'
+            }`}
+          >
+            <span aria-hidden="true">✨</span>
+            <span>Study Spirit ({spirit?.species?.name || 'Companion'})</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
             aria-selected={activeTab === 'room'}
             onClick={() => handleTabSwitch('room')}
             className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
@@ -777,12 +880,23 @@ export function Dashboard({ defaultTab = 'quests' }) {
             </Suspense>
           )}
 
+          {activeTab === 'spirit' && (
+            <Suspense fallback={<TabLoadingFallback message="Attuning Study Spirit & sanctuary auras..." />}>
+              <SpiritPanel
+                spiritData={spirit}
+                userLevel={char.level}
+                onNavigateToQuests={() => handleTabSwitch('quests')}
+              />
+            </Suspense>
+          )}
+
           {activeTab === 'room' && (
             <Suspense fallback={<RoomSkeleton />}>
               <MyRoom
                 inventory={inventory}
                 rooms={rooms}
                 activeRoom={activeRoom}
+                spirit={spirit}
                 onSelectRoom={handleSelectRoom}
                 userLevel={char.level}
                 onToggleEquip={handleToggleEquip}

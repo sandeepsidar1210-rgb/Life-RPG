@@ -13,6 +13,7 @@ export function MyRoom({
   inventory = [],
   rooms = [],
   activeRoom = null,
+  spirit = null,
   onSelectRoom,
   userLevel = 1,
   onToggleEquip,
@@ -20,6 +21,17 @@ export function MyRoom({
   onNavigateToShop
 }) {
   const [simulateWebGLFailure, setSimulateWebGLFailure] = useState(false);
+
+  // Determine active spirit 3D model key
+  const spiritModelKey = useMemo(() => {
+    if (!spirit) return 'emberwisp_stage_1';
+    if (spirit.current_stage?.model_3d_key) return spirit.current_stage.model_3d_key;
+    if (spirit.current_stage?.model_key) return spirit.current_stage.model_key;
+    const stageNum = spirit.current_stage?.stage_number || spirit.spirit?.current_stage || (userLevel >= 12 ? 3 : (userLevel >= 5 ? 2 : 1));
+    const attr = spirit.species?.attribute_type || 'focus';
+    const prefix = attr === 'discipline' ? 'rootling' : attr === 'vitality' ? 'sproutling' : attr === 'creativity' ? 'inkling' : 'emberwisp';
+    return `${prefix}_stage_${stageNum}`;
+  }, [spirit, userLevel]);
 
   const ownedItems = inventory || [];
 
@@ -90,9 +102,20 @@ export function MyRoom({
           </p>
         </div>
 
-        <div className="text-xs font-pixel bg-cozy-parchment px-3 py-1.5 rounded-pixel border-2 border-cozy-border flex items-center gap-1.5">
-          <span className="text-cozy-sage-dark font-bold">{roomEquippedItems.length}</span>
-          <span>Placed in {roomName}</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          {spirit && (
+            <div className="text-xs font-pixel bg-cozy-parchment px-3 py-1.5 rounded-pixel border-2 border-cozy-border flex items-center gap-1.5 shadow-pixel-xs">
+              <span aria-hidden="true">✨</span>
+              <span className="text-cozy-terracotta-dark font-bold">
+                {spirit.current_stage?.name || spirit.species?.name || 'Study Spirit'}
+              </span>
+              <span className="text-cozy-brown-medium text-[11px]">(Stage {spirit.current_stage?.stage_number || spirit.spirit?.current_stage || 1})</span>
+            </div>
+          )}
+          <div className="text-xs font-pixel bg-cozy-parchment px-3 py-1.5 rounded-pixel border-2 border-cozy-border flex items-center gap-1.5">
+            <span className="text-cozy-sage-dark font-bold">{roomEquippedItems.length}</span>
+            <span>Placed in {roomName}</span>
+          </div>
         </div>
       </div>
 
@@ -120,6 +143,7 @@ export function MyRoom({
             <RoomCanvas
               equippedNames={equippedNames}
               roomName={roomName}
+              spiritModelKey={spiritModelKey}
               simulateWebGLFailure={simulateWebGLFailure}
             />
           </CanvasErrorBoundary>
