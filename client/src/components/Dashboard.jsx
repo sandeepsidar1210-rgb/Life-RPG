@@ -4,9 +4,12 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { motion } from 'framer-motion';
 import { QuestList } from './QuestList.jsx';
 import { ShopCatalog } from './ShopCatalog.jsx';
-import { MyRoom } from './MyRoom.jsx';
+import { RoomSkeleton } from './MyRoom/RoomSkeleton.jsx';
 import { CelebrationModal } from './CelebrationModal.jsx';
 import { ToastContainer } from './Toast.jsx';
+
+// Lazy-load the 3D Room component so Three.js & R3F don't bloat the initial bundle
+const MyRoom = React.lazy(() => import('./MyRoom.jsx'));
 
 export function Dashboard({ defaultTab = 'quests' }) {
   const { user, token, signOut } = useAuth();
@@ -589,12 +592,14 @@ export function Dashboard({ defaultTab = 'quests' }) {
           )}
 
           {activeTab === 'room' && (
-            <MyRoom
-              inventory={inventory}
-              onToggleEquip={handleToggleEquip}
-              equippingId={equippingId}
-              onNavigateToShop={() => handleTabSwitch('shop')}
-            />
+            <React.Suspense fallback={<RoomSkeleton />}>
+              <MyRoom
+                inventory={inventory}
+                onToggleEquip={handleToggleEquip}
+                equippingId={equippingId}
+                onNavigateToShop={() => handleTabSwitch('shop')}
+              />
+            </React.Suspense>
           )}
 
           {activeTab === 'shop' && (
