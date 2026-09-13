@@ -39,9 +39,9 @@
   --color-stat-vitality: #355E3B;   /* Vitality green */
   --color-stat-creativity: #A03E22; /* Terracotta flame */
 
-  /* Typography */
-  --font-pixel: 'Pixelify Sans', cursive, sans-serif;
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Typography with robust fallbacks to eliminate FOIT (invisible text) and minimize CLS */
+  --font-pixel: 'Pixelify Sans', 'Courier New', monospace, sans-serif;
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 @layer base {

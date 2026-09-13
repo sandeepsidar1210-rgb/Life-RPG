@@ -1,0 +1,9 @@
+# Life RPG Robots.txt
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /dashboard
+Disallow: /api/
+
+# Host & Sitemap
+Sitemap: https://life-rpg.sanctuary.app/sitemap.xml

@@ -1,15 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { motion } from 'framer-motion';
-import { QuestList } from './QuestList.jsx';
-import { ShopCatalog } from './ShopCatalog.jsx';
 import { RoomSkeleton } from './MyRoom/RoomSkeleton.jsx';
 import { CelebrationModal } from './CelebrationModal.jsx';
 import { ToastContainer } from './Toast.jsx';
 
-// Lazy-load the 3D Room component so Three.js & R3F don't bloat the initial bundle
+// Code-split major views so Three.js, Shop, and Quest assets are loaded on demand
+const QuestList = React.lazy(() => import('./QuestList.jsx').then(m => ({ default: m.QuestList })));
+const ShopCatalog = React.lazy(() => import('./ShopCatalog.jsx').then(m => ({ default: m.ShopCatalog })));
 const MyRoom = React.lazy(() => import('./MyRoom.jsx'));
+
+function TabLoadingFallback({ message = "Gathering wares..." }) {
+  return (
+    <div className="pixel-box bg-cozy-card p-10 rounded-pixel text-center space-y-4 border-2 border-cozy-brown-dark shadow-pixel-sm animate-pulse" role="status" aria-live="polite">
+      <div className="text-3xl select-none" aria-hidden="true">⏳</div>
+      <p className="font-pixel text-sm sm:text-base text-cozy-brown-dark">{message}</p>
+    </div>
+  );
+}
 
 export function Dashboard({ defaultTab = 'quests' }) {
   const { user, token, signOut } = useAuth();
@@ -607,35 +616,39 @@ export function Dashboard({ defaultTab = 'quests' }) {
         {/* Main Content Area */}
         <main id="main-content" tabIndex={-1} className="focus:outline-none">
           {activeTab === 'quests' && (
-            <QuestList
-              quests={quests}
-              onComplete={handleCompleteQuest}
-              onCreate={handleCreateQuest}
-              onEdit={handleEditQuest}
-              onDelete={handleDeleteQuest}
-              completingId={completingId}
-            />
+            <Suspense fallback={<TabLoadingFallback message="Unfurling study scroll & quests..." />}>
+              <QuestList
+                quests={quests}
+                onComplete={handleCompleteQuest}
+                onCreate={handleCreateQuest}
+                onEdit={handleEditQuest}
+                onDelete={handleDeleteQuest}
+                completingId={completingId}
+              />
+            </Suspense>
           )}
 
           {activeTab === 'room' && (
-            <React.Suspense fallback={<RoomSkeleton />}>
+            <Suspense fallback={<RoomSkeleton />}>
               <MyRoom
                 inventory={inventory}
                 onToggleEquip={handleToggleEquip}
                 equippingId={equippingId}
                 onNavigateToShop={() => handleTabSwitch('shop')}
               />
-            </React.Suspense>
+            </Suspense>
           )}
 
           {activeTab === 'shop' && (
-            <ShopCatalog
-              items={items}
-              inventory={inventory}
-              userCoins={char.cozy_coins}
-              onPurchase={handlePurchaseItem}
-              purchasingId={purchasingId}
-            />
+            <Suspense fallback={<TabLoadingFallback message="Unpacking Emporium shelves & companions..." />}>
+              <ShopCatalog
+                items={items}
+                inventory={inventory}
+                userCoins={char.cozy_coins}
+                onPurchase={handlePurchaseItem}
+                purchasingId={purchasingId}
+              />
+            </Suspense>
           )}
         </main>
       </div>
