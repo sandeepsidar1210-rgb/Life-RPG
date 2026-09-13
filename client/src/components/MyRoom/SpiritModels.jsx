@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 // Stylized low-poly flat-shaded material
@@ -864,9 +864,153 @@ const MODEL_MAP = {
 };
 
 /**
+ * RoamingSpiritCompanion
+ * Implements autonomous gentle room-roaming flight paths across sanctuary waypoints,
+ * with smooth acceleration, realistic turning/banking, inquisitive hovering pauses,
+ * and an interactive joyful spin flip on click.
+ */
+function RoamingSpiritCompanion({ Component, roomName }) {
+  const groupRef = useRef();
+  const stateRef = useRef({
+    wpIndex: 0,
+    pauseTimeLeft: 1.2,
+    spinTimeLeft: 0,
+    currentPos: null,
+    targetPos: null
+  });
+
+  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
+  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
+
+  // Custom organic flight waypoints per room
+  const waypoints = useMemo(() => {
+    if (isReadingNook) {
+      return [
+        [-1.3, 1.4, 0.8],   // Beside velvet reading armchair
+        [-0.7, 1.8, -1.0],  // Starlight twilight window sill
+        [0.1, 1.4, 0.5],    // Hovering over emerald reading rug
+        [0.9, 1.7, -0.3],   // Browsing mahogany library shelves
+        [-0.5, 1.6, 0.9]    // Floating gently near reading lamp
+      ];
+    }
+    if (isGardenBalcony) {
+      return [
+        [-0.6, 1.4, 0.6],   // By wrought-iron bistro table
+        [-1.2, 1.6, -0.6],  // Hovering over flowering terrace planter
+        [0.8, 1.5, 0.8],    // Sunlit classical balustrade overlook
+        [0.2, 1.7, -0.2],   // Gentle breeze above terrace center
+        [1.1, 1.5, -0.7]    // Warm corner sunbeam
+      ];
+    }
+    // Default: Study Desk
+    return [
+      [-1.4, 1.5, 0.3],   // Beside classical wooden study desk
+      [-0.8, 1.8, -1.0],  // Near bright sunny window
+      [0.2, 1.45, 0.7],   // Gliding in a slow curve over the rug
+      [1.1, 1.6, -0.4],   // Near oak bookshelf & parchment shelves
+      [-0.4, 1.7, 0.2]    // Inquisitive peek above desk surface
+    ];
+  }, [isReadingNook, isGardenBalcony]);
+
+  useFrame(({ clock }, delta) => {
+    if (!groupRef.current) return;
+    const s = stateRef.current;
+    const t = clock.getElapsedTime();
+
+    // 1. Initialize start position at first waypoint
+    if (!s.currentPos) {
+      s.currentPos = [...waypoints[0]];
+      s.targetPos = [...waypoints[1 % waypoints.length]];
+      groupRef.current.position.set(s.currentPos[0], s.currentPos[1], s.currentPos[2]);
+    }
+
+    // 2. Interactive Joyful Corkscrew Spin Flip
+    if (s.spinTimeLeft > 0) {
+      s.spinTimeLeft = Math.max(0, s.spinTimeLeft - delta);
+      const progress = 1 - s.spinTimeLeft / 0.8;
+      groupRef.current.rotation.y += delta * 12;
+      groupRef.current.position.y = s.currentPos[1] + Math.sin(progress * Math.PI) * 0.45;
+      return;
+    }
+
+    // 3. Inquisitive Hovering Pause at Waypoint
+    if (s.pauseTimeLeft > 0) {
+      s.pauseTimeLeft -= delta;
+      // Gentle breathing hover bob and tilt
+      groupRef.current.position.y = s.currentPos[1] + Math.sin(t * 2.5) * 0.06;
+      groupRef.current.rotation.y += Math.sin(t * 1.6) * 0.006;
+      groupRef.current.rotation.z = Math.sin(t * 2.0) * 0.025;
+      return;
+    }
+
+    // 4. Smooth Flight toward Target Waypoint
+    const target = s.targetPos;
+    const dx = target[0] - s.currentPos[0];
+    const dy = target[1] - s.currentPos[1];
+    const dz = target[2] - s.currentPos[2];
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    if (dist < 0.12) {
+      // Reached waypoint: switch to next destination with random pause duration
+      s.currentPos = [...target];
+      s.wpIndex = (s.wpIndex + 1) % waypoints.length;
+      s.targetPos = [...waypoints[s.wpIndex]];
+      s.pauseTimeLeft = 1.8 + Math.random() * 2.2; // 1.8s - 4.0s pause
+    } else {
+      const step = Math.min(dist, 0.52 * delta);
+      const moveX = (dx / dist) * step;
+      const moveY = (dy / dist) * step;
+      const moveZ = (dz / dist) * step;
+
+      s.currentPos[0] += moveX;
+      s.currentPos[1] += moveY;
+      s.currentPos[2] += moveZ;
+
+      // Update position with continuous atmospheric hover wave
+      groupRef.current.position.set(
+        s.currentPos[0],
+        s.currentPos[1] + Math.sin(t * 3.2) * 0.045,
+        s.currentPos[2]
+      );
+
+      // Smooth heading orientation toward destination
+      const targetAngle = Math.atan2(dx, dz);
+      let diff = targetAngle - groupRef.current.rotation.y;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      groupRef.current.rotation.y += diff * Math.min(1, delta * 3.6);
+
+      // Bank tilt into curve
+      const bank = Math.max(-0.22, Math.min(0.22, -diff * 0.35));
+      groupRef.current.rotation.z += (bank - groupRef.current.rotation.z) * delta * 4;
+    }
+  });
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    stateRef.current.spinTimeLeft = 0.8;
+  };
+
+  return (
+    <group
+      ref={groupRef}
+      onClick={handleClick}
+      onPointerOver={() => {
+        if (typeof document !== 'undefined') document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        if (typeof document !== 'undefined') document.body.style.cursor = 'auto';
+      }}
+    >
+      <Component />
+    </group>
+  );
+}
+
+/**
  * SpiritCompanion
- * Renders the active spirit model in the 3D sanctuary, positioned cleanly
- * beside the scholar in whichever chamber is active.
+ * Renders the active spirit model. When inside the sanctuary room, it wanders freely
+ * across waypoints with organic flight kinematics. When in preview mode, it remains centered.
  */
 export function SpiritCompanion({
   modelKey = 'emberwisp_stage_1',
@@ -875,7 +1019,7 @@ export function SpiritCompanion({
 }) {
   const Component = MODEL_MAP[modelKey] || EmberwispSpark;
 
-  // In dedicated inspection preview (SpiritPanel), center at [0, 0, 0]
+  // In dedicated inspection preview (SpiritPanel / Evolution Modal), center at [0, 0, 0]
   if (isPreview) {
     return (
       <group position={[0, -0.3, 0]}>
@@ -884,21 +1028,8 @@ export function SpiritCompanion({
     );
   }
 
-  // Room-adapted sanctuary coordinates
-  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
-  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
-
-  const position = isReadingNook
-    ? [-1.3, 1.3, 0.8]  // Beside velvet reading armchair
-    : isGardenBalcony
-    ? [-0.6, 1.4, 0.6]  // Hovering by wrought-iron marble bistro table
-    : [-1.4, 1.6, 0.3]; // Beside classical wooden study desk
-
-  return (
-    <group position={position}>
-      <Component />
-    </group>
-  );
+  // Autonomous free-roaming flight companion inside 3D Sanctuary rooms
+  return <RoamingSpiritCompanion Component={Component} roomName={roomName} />;
 }
 
 export default SpiritCompanion;
