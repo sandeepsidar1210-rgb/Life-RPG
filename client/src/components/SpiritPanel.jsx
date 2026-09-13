@@ -3,15 +3,17 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpiritCompanion } from './MyRoom/SpiritModels.jsx';
+import { useScholar } from '../context/ScholarContext.jsx';
 
 /**
- * All 4 Spirit Species & Stage Catalog for the Spirit Compendium
+ * All 4 Spirit Species & Stage Catalog for the Spirit Compendium & Menagerie
  */
 export const ALL_SPECIES_CATALOG = [
   {
     code: 'emberwisp',
     name: 'Emberwisp',
     attribute_type: 'focus',
+    unlock_level: 1,
     title: 'Focus Spirit',
     icon: '🔥',
     lore_description:
@@ -45,6 +47,7 @@ export const ALL_SPECIES_CATALOG = [
     code: 'rootling',
     name: 'Rootling',
     attribute_type: 'discipline',
+    unlock_level: 3,
     title: 'Discipline Spirit',
     icon: '🛡️',
     lore_description:
@@ -78,6 +81,7 @@ export const ALL_SPECIES_CATALOG = [
     code: 'sproutling',
     name: 'Sproutling',
     attribute_type: 'vitality',
+    unlock_level: 7,
     title: 'Vitality Spirit',
     icon: '🌱',
     lore_description:
@@ -111,6 +115,7 @@ export const ALL_SPECIES_CATALOG = [
     code: 'inkling',
     name: 'Inkling',
     attribute_type: 'creativity',
+    unlock_level: 10,
     title: 'Creativity Spirit',
     icon: '✨',
     lore_description:
@@ -195,14 +200,28 @@ export const getAttrTheme = (attr = 'focus') => {
  * 2. "Spirit Compendium" view: Interactive bestiary to inspect all 4 spirit species across all 12 stages in 3D.
  */
 export function SpiritPanel({
-  spiritData = null,
-  userLevel = 1,
+  spiritData: propSpiritData = null,
+  userLevel: propUserLevel = 1,
   onNavigateToQuests
 }) {
   const controlsRef = useRef();
   const compendiumControlsRef = useRef();
 
-  // Top view tab: 'my_spirit' or 'compendium'
+  const scholar = useScholar();
+  const spiritData = propSpiritData || scholar?.spirit;
+  const userLevel = propUserLevel || scholar?.character?.level || 1;
+  const menagerie = scholar?.menagerie || [];
+  const {
+    handleSwitchActiveSpirit,
+    handleGreetSpirit,
+    activeGreeting,
+    dismissGreetingBubble,
+    spiritGreetingPending
+  } = scholar || {};
+
+  const [attuningId, setAttuningId] = useState(null);
+
+  // Top view tab: 'my_spirit', 'menagerie', or 'compendium'
   const [activeView, setActiveView] = useState('my_spirit');
 
   // Extract bonded spirit properties
@@ -214,6 +233,31 @@ export function SpiritPanel({
         'Born from the glowing embers of study hearths and candlelit tomes. Emberwisps thrive in moments of deep, unbroken concentration and illuminate late-night revisions.'
     };
   }, [spiritData]);
+
+  // Display Menagerie data combining catalog definitions with real unlocked and active states
+  const displayMenagerie = useMemo(() => {
+    return ALL_SPECIES_CATALOG.map((cat) => {
+      const apiEntry = menagerie.find(
+        (m) => m.attribute_type === cat.attribute_type || m.code === cat.code
+      );
+
+      const isOriginal = apiEntry ? apiEntry.is_original : cat.attribute_type === species.attribute_type;
+      const isUnlocked = isOriginal || (apiEntry ? apiEntry.is_unlocked : userLevel >= cat.unlock_level);
+      const isActive = apiEntry ? apiEntry.is_active : cat.attribute_type === species.attribute_type;
+      const currentStageNum = userLevel >= 12 ? 3 : userLevel >= 5 ? 2 : 1;
+      const currentStage = cat.stages.find((s) => s.stage_number === currentStageNum) || cat.stages[0];
+
+      return {
+        ...cat,
+        id: apiEntry?.id || `species-${cat.code}`,
+        is_original: isOriginal,
+        is_unlocked: isUnlocked,
+        is_active: isActive,
+        levels_remaining: isUnlocked ? 0 : Math.max(0, cat.unlock_level - userLevel),
+        current_stage: apiEntry?.current_stage || currentStage
+      };
+    });
+  }, [menagerie, species.attribute_type, userLevel]);
 
   const currentStage = useMemo(() => {
     return (
@@ -329,8 +373,8 @@ export function SpiritPanel({
           </p>
         </div>
 
-        {/* View Switcher: My Bonded Spirit vs Spirit Compendium */}
-        <div className="flex items-center gap-2 bg-cozy-parchment p-1 rounded-pixel border-2 border-cozy-border">
+        {/* View Switcher: My Bonded Spirit vs Menagerie vs Spirit Compendium */}
+        <div className="flex items-center gap-2 bg-cozy-parchment p-1 rounded-pixel border-2 border-cozy-border flex-wrap">
           <button
             type="button"
             onClick={() => setActiveView('my_spirit')}
@@ -342,6 +386,19 @@ export function SpiritPanel({
           >
             <span>🌟</span>
             <span>My Spirit</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView('menagerie')}
+            className={`touch-target px-3 py-1.5 rounded-pixel font-pixel text-xs font-bold transition flex items-center gap-1.5 ${
+              activeView === 'menagerie'
+                ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-xs border-2 border-cozy-brown-dark'
+                : 'text-cozy-brown-medium hover:text-cozy-brown-dark'
+            }`}
+          >
+            <span>🐾</span>
+            <span>Menagerie</span>
           </button>
 
           <button
@@ -388,7 +445,11 @@ export function SpiritPanel({
                     <directionalLight position={[-4, 2, -2]} intensity={0.6} color={attrTheme.lightColor} />
                     <pointLight position={[0, -0.5, 0]} intensity={0.4} color="#FFF" />
 
-                    <SpiritCompanion modelKey={activeInspectionModelKey} isPreview={true} />
+                    <SpiritCompanion
+                      modelKey={activeInspectionModelKey}
+                      isPreview={true}
+                      onGreet={handleGreetSpirit}
+                    />
 
                     <OrbitControls
                       ref={controlsRef}
@@ -403,6 +464,47 @@ export function SpiritPanel({
                     />
                   </Canvas>
 
+                  {/* Interactive Greeting Speech Bubble Overlay */}
+                  <AnimatePresence>
+                    {activeGreeting && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                        className={`absolute top-14 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-sm z-20 p-3.5 rounded-pixel border-2 shadow-pixel ${
+                          activeGreeting.isResting
+                            ? 'bg-cozy-parchment/95 backdrop-blur-md border-cozy-brown-dark text-cozy-brown-dark'
+                            : 'bg-cozy-card/95 backdrop-blur-md border-amber-600 text-cozy-brown-dark ring-2 ring-amber-400/40'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base" aria-hidden="true">{activeGreeting.isResting ? '🌙' : '✨'}</span>
+                            <span className="font-pixel font-bold text-xs text-cozy-brown-dark">
+                              {activeGreeting.speciesName}
+                              {activeGreeting.isResting && (
+                                <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-cozy-brown-dark/10 font-normal">
+                                  Resting ({activeGreeting.cooldownRemaining})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={dismissGreetingBubble}
+                            className="touch-target text-xs text-cozy-brown-medium hover:text-cozy-brown-dark p-1 cursor-pointer"
+                            aria-label="Dismiss greeting"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <p className="text-xs mt-1.5 leading-relaxed italic font-pixel text-cozy-brown-dark">
+                          "{activeGreeting.text}"
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Top HUD: Current View Tag & Reset Camera */}
                   <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
                     <span className="px-2.5 py-1 bg-cozy-card/90 backdrop-blur-sm text-cozy-brown-dark text-[11px] font-pixel rounded border border-cozy-brown-light/60 shadow-pixel-sm flex items-center gap-1.5">
@@ -411,7 +513,18 @@ export function SpiritPanel({
                     </span>
                   </div>
 
-                  <div className="absolute top-3 right-3 z-10">
+                  <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleGreetSpirit?.()}
+                      disabled={spiritGreetingPending}
+                      title="Greet your Study Companion"
+                      aria-label="Greet your Study Companion"
+                      className="touch-target px-3 py-1.5 bg-cozy-terracotta hover:bg-cozy-terracotta-dark text-white text-xs font-pixel rounded border-2 border-cozy-brown-dark shadow-pixel-sm transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-cozy-brown-dark cursor-pointer"
+                    >
+                      <span className={spiritGreetingPending ? "animate-spin" : ""} aria-hidden="true">✨</span>
+                      <span>{spiritGreetingPending ? 'Greeting...' : 'Greet Spirit'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={handleResetCamera}
@@ -544,9 +657,21 @@ export function SpiritPanel({
                     </p>
                   </div>
 
-                  <div className="text-right text-xs font-pixel text-cozy-brown-medium">
-                    <span>Scholar Level: </span>
-                    <span className="text-cozy-terracotta-dark font-bold text-sm">{userLevel}</span>
+                  <div className="flex items-center gap-3 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => handleGreetSpirit?.()}
+                      disabled={spiritGreetingPending}
+                      title={spiritData?.greeting_status?.is_on_cooldown ? `Resting (~${spiritData.greeting_status.cooldown_remaining_formatted})` : "Greet your spirit companion"}
+                      className="touch-target px-3 py-1.5 text-xs font-pixel font-bold rounded-pixel border-2 border-cozy-brown-dark bg-cozy-terracotta hover:bg-cozy-terracotta-dark text-white shadow-pixel-xs transition active:scale-95 flex items-center gap-1.5 disabled:opacity-75 cursor-pointer"
+                    >
+                      <span>{spiritGreetingPending ? '⏳' : '✨'}</span>
+                      <span>{spiritGreetingPending ? 'Greeting...' : 'Greet Spirit'}</span>
+                    </button>
+                    <div className="text-right text-xs font-pixel text-cozy-brown-medium">
+                      <span>Scholar Level: </span>
+                      <span className="text-cozy-terracotta-dark font-bold text-sm">{userLevel}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -755,6 +880,194 @@ export function SpiritPanel({
                   );
                 })}
               </div>
+            </div>
+          </motion.div>
+        ) : activeView === 'menagerie' ? (
+          /* ========================================================================= */
+          /* VIEW 2: SPIRIT MENAGERIE (Attune & Unlock 4 Species Progression Grid)    */
+          /* ========================================================================= */
+          <motion.div
+            key="menagerie"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-6"
+          >
+            {/* Top Menagerie Guidance Card */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-cozy-card p-4 rounded-pixel border-2 border-cozy-brown-dark shadow-pixel-sm">
+              <div className="space-y-0.5">
+                <h3 className="text-base font-pixel font-bold text-cozy-brown-dark flex items-center gap-2">
+                  <span>🐾</span> Spirit Menagerie Collection
+                </h3>
+                <p className="text-xs text-cozy-brown-medium">
+                  Unlock celestial companions as your scholar level advances. Attuning with any unlocked species summons it as your active companion across all 3D Sanctuary rooms.
+                </p>
+              </div>
+              <div className="text-xs font-pixel text-cozy-brown-medium shrink-0 bg-cozy-parchment px-3 py-1.5 rounded border border-cozy-border">
+                <span>Scholar Level: </span>
+                <span className="text-cozy-terracotta-dark font-bold text-sm">{userLevel}</span>
+              </div>
+            </div>
+
+            {/* 4 Species Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {displayMenagerie.map((spec) => {
+                const isUnlocked = spec.is_unlocked;
+                const isActive = spec.is_active;
+                const theme = getAttrTheme(spec.attribute_type);
+                const stage = spec.current_stage || spec.stages?.[0];
+
+                return (
+                  <div
+                    key={spec.code || spec.attribute_type}
+                    className={`pixel-box p-5 rounded-pixel border-2 transition relative flex flex-col justify-between gap-4 ${
+                      isActive
+                        ? 'border-amber-500 bg-gradient-to-b from-amber-500/10 to-cozy-card shadow-pixel ring-2 ring-amber-400/50'
+                        : isUnlocked
+                        ? `${theme.borderColor} bg-cozy-card shadow-pixel hover:shadow-pixel-md`
+                        : 'border-cozy-border/70 bg-cozy-parchment/40 opacity-75 shadow-pixel-xs'
+                    }`}
+                  >
+                    <div>
+                      {/* Species Header */}
+                      <div className="flex items-center justify-between gap-2 border-b border-cozy-border/70 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-2xl" aria-hidden="true">{spec.icon}</span>
+                          <div>
+                            <h4 className="text-base font-pixel font-bold text-cozy-brown-dark flex items-center gap-2">
+                              {spec.name}
+                              {spec.is_original && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cozy-sage text-white font-pixel font-normal">
+                                  Original Bond
+                                </span>
+                              )}
+                            </h4>
+                            <span className={`text-[11px] font-pixel font-bold ${theme.color}`}>
+                              {theme.title} Spirit
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          {isActive ? (
+                            <span className="px-3 py-1 bg-amber-500 text-white font-pixel text-xs font-bold rounded-full shadow-xs flex items-center gap-1.5 animate-pulse">
+                              <span>✨</span> Currently Attuned
+                            </span>
+                          ) : isUnlocked ? (
+                            <span className="px-2.5 py-1 bg-cozy-sage text-white font-pixel text-xs font-bold rounded-full flex items-center gap-1">
+                              <span>✓</span> Unlocked
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 bg-cozy-brown-dark/20 text-cozy-brown-dark font-pixel text-xs font-bold rounded-full flex items-center gap-1">
+                              <span>🔒</span> Unlocks at Lv. {spec.unlock_level}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 3D Model Miniature Preview */}
+                      <div className="mt-4 relative rounded-pixel overflow-hidden bg-gradient-to-b from-cozy-parchment to-cozy-card border border-cozy-border h-[180px]">
+                        <Canvas
+                          tabIndex={-1}
+                          dpr={1}
+                          camera={{ position: [0, 0.4, 2.3], fov: 45 }}
+                          gl={{ antialias: true, alpha: true }}
+                        >
+                          <ambientLight intensity={1.1} />
+                          <directionalLight position={[3, 4, 3]} intensity={1.1} />
+                          <directionalLight position={[-3, 1, -1]} intensity={0.5} color={theme.lightColor} />
+                          <SpiritCompanion
+                            modelKey={stage?.model_key || `${spec.code}_stage_1`}
+                            isPreview={true}
+                          />
+                          <OrbitControls
+                            enablePan={false}
+                            enableZoom={false}
+                            minDistance={1.8}
+                            maxDistance={3.5}
+                            autoRotate={true}
+                            autoRotateSpeed={1.8}
+                          />
+                        </Canvas>
+
+                        {/* Stage Tag Overlay */}
+                        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                          <span className="px-2 py-0.5 bg-cozy-card/90 backdrop-blur-sm text-cozy-brown-dark font-pixel text-[11px] font-bold rounded border border-cozy-border">
+                            {stage?.name || 'Stage 1'} (Stage {stage?.stage_number || 1}/3)
+                          </span>
+                          {!isUnlocked && (
+                            <span className="px-2 py-0.5 bg-amber-950/80 text-amber-200 font-pixel text-[10px] rounded">
+                              Locked
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Lore & Resonance Info */}
+                      <p className="text-xs text-cozy-brown-dark mt-3 leading-relaxed line-clamp-2">
+                        {spec.lore_description}
+                      </p>
+
+                      {/* Locked Progress Bar */}
+                      {!isUnlocked && (
+                        <div className="mt-3 space-y-1 bg-cozy-parchment/80 p-2.5 rounded border border-cozy-border">
+                          <div className="flex justify-between text-[11px] font-pixel text-cozy-brown-medium">
+                            <span>Required: Level {spec.unlock_level}</span>
+                            <span className="text-cozy-terracotta font-bold">
+                              {spec.levels_remaining || (spec.unlock_level - userLevel)} {spec.levels_remaining === 1 ? 'level' : 'levels'} to go
+                            </span>
+                          </div>
+                          <div className="w-full h-2.5 bg-cozy-border/60 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-amber-400 to-cozy-terracotta rounded-full transition-all duration-300"
+                              style={{
+                                width: `${Math.min(100, Math.max(10, (userLevel / spec.unlock_level) * 100))}%`
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Attune Button */}
+                    <div className="pt-2">
+                      {isActive ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-2.5 px-4 font-pixel text-xs font-bold rounded-pixel border-2 border-amber-600 bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 cursor-default flex items-center justify-center gap-2"
+                        >
+                          <span>✨</span>
+                          <span>Currently Attuned Companion</span>
+                        </button>
+                      ) : isUnlocked ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setAttuningId(spec.id || spec.code);
+                            await handleSwitchActiveSpirit?.(spec.id || spec.attribute_type);
+                            setAttuningId(null);
+                          }}
+                          disabled={attuningId !== null}
+                          className="touch-target w-full py-2.5 px-4 font-pixel text-xs font-bold rounded-pixel border-2 border-cozy-brown-dark bg-cozy-terracotta hover:bg-cozy-terracotta-dark text-white shadow-pixel-xs transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                        >
+                          <span>{attuningId === (spec.id || spec.code) ? '⏳' : '🔮'}</span>
+                          <span>{attuningId === (spec.id || spec.code) ? 'Attuning Spirit...' : `Attune with ${spec.name}`}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-2 px-4 font-pixel text-xs font-bold rounded-pixel border border-cozy-border bg-cozy-parchment text-cozy-brown-medium cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>🔒</span>
+                          <span>Unlocks at Scholar Level {spec.unlock_level}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         ) : (

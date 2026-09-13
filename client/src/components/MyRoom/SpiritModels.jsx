@@ -869,7 +869,7 @@ const MODEL_MAP = {
  * with smooth acceleration, realistic turning/banking, inquisitive hovering pauses,
  * and an interactive joyful spin flip on click.
  */
-function RoamingSpiritCompanion({ Component, roomName }) {
+function RoamingSpiritCompanion({ Component, roomName, onGreet = null }) {
   const groupRef = useRef();
   const stateRef = useRef({
     wpIndex: 0,
@@ -924,13 +924,17 @@ function RoamingSpiritCompanion({ Component, roomName }) {
       groupRef.current.position.set(s.currentPos[0], s.currentPos[1], s.currentPos[2]);
     }
 
-    // 2. Interactive Joyful Corkscrew Spin Flip
+    // 2. Interactive Joyful Corkscrew Spin Flip & Greet Bounce
     if (s.spinTimeLeft > 0) {
       s.spinTimeLeft = Math.max(0, s.spinTimeLeft - delta);
-      const progress = 1 - s.spinTimeLeft / 0.8;
-      groupRef.current.rotation.y += delta * 12;
-      groupRef.current.position.y = s.currentPos[1] + Math.sin(progress * Math.PI) * 0.45;
+      const progress = 1 - s.spinTimeLeft / 1.0;
+      groupRef.current.rotation.y += delta * 15;
+      groupRef.current.position.y = s.currentPos[1] + Math.sin(progress * Math.PI) * 0.55;
+      const scaleBoost = 1 + Math.sin(progress * Math.PI) * 0.25;
+      groupRef.current.scale.set(scaleBoost, scaleBoost, scaleBoost);
       return;
+    } else if (groupRef.current.scale.x !== 1) {
+      groupRef.current.scale.set(1, 1, 1);
     }
 
     // 3. Inquisitive Hovering Pause at Waypoint
@@ -988,7 +992,8 @@ function RoamingSpiritCompanion({ Component, roomName }) {
 
   const handleClick = (e) => {
     e.stopPropagation();
-    stateRef.current.spinTimeLeft = 0.8;
+    stateRef.current.spinTimeLeft = 1.0;
+    if (onGreet) onGreet();
   };
 
   return (
@@ -1002,6 +1007,58 @@ function RoamingSpiritCompanion({ Component, roomName }) {
         if (typeof document !== 'undefined') document.body.style.cursor = 'auto';
       }}
     >
+      {/* Invisible Expanded Raycast Click Collider */}
+      <mesh position={[0, 0.35, 0]}>
+        <boxGeometry args={[0.9, 0.9, 0.9]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <Component />
+    </group>
+  );
+}
+
+function PreviewSpiritCompanion({ Component, onGreet }) {
+  const groupRef = useRef();
+  const spinRef = useRef(0);
+
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+    if (spinRef.current > 0) {
+      spinRef.current = Math.max(0, spinRef.current - delta);
+      const progress = 1 - spinRef.current / 1.0;
+      groupRef.current.rotation.y += delta * 15;
+      groupRef.current.position.y = -0.3 + Math.sin(progress * Math.PI) * 0.45;
+      const scaleBoost = 1 + Math.sin(progress * Math.PI) * 0.2;
+      groupRef.current.scale.set(scaleBoost, scaleBoost, scaleBoost);
+    } else if (groupRef.current.scale.x !== 1) {
+      groupRef.current.scale.set(1, 1, 1);
+      groupRef.current.position.y = -0.3;
+    }
+  });
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    spinRef.current = 1.0;
+    if (onGreet) onGreet();
+  };
+
+  return (
+    <group
+      ref={groupRef}
+      position={[0, -0.3, 0]}
+      onClick={handleClick}
+      onPointerOver={() => {
+        if (typeof document !== 'undefined') document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        if (typeof document !== 'undefined') document.body.style.cursor = 'auto';
+      }}
+    >
+      {/* Invisible Raycast Click Collider */}
+      <mesh position={[0, 0.35, 0]}>
+        <boxGeometry args={[0.9, 0.9, 0.9]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <Component />
     </group>
   );
@@ -1015,21 +1072,18 @@ function RoamingSpiritCompanion({ Component, roomName }) {
 export function SpiritCompanion({
   modelKey = 'emberwisp_stage_1',
   roomName = 'Study Desk',
-  isPreview = false
+  isPreview = false,
+  onGreet = null
 }) {
   const Component = MODEL_MAP[modelKey] || EmberwispSpark;
 
   // In dedicated inspection preview (SpiritPanel / Evolution Modal), center at [0, 0, 0]
   if (isPreview) {
-    return (
-      <group position={[0, -0.3, 0]}>
-        <Component />
-      </group>
-    );
+    return <PreviewSpiritCompanion Component={Component} onGreet={onGreet} />;
   }
 
   // Autonomous free-roaming flight companion inside 3D Sanctuary rooms
-  return <RoamingSpiritCompanion Component={Component} roomName={roomName} />;
+  return <RoamingSpiritCompanion Component={Component} roomName={roomName} onGreet={onGreet} />;
 }
 
 export default SpiritCompanion;

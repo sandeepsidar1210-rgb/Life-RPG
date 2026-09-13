@@ -2,7 +2,7 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
 import { checkAchievements } from '../utils/achievements.js';
-import { determineHighestAttribute, FALLBACK_SPECIES, FALLBACK_STAGES } from './spirit.js';
+import { determineHighestAttribute, FALLBACK_SPECIES, FALLBACK_STAGES, getOrCreateFallbackState } from './spirit.js';
 
 const router = express.Router();
 
@@ -546,10 +546,49 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
       }
     }
 
-    // h. Check & award achievements (non-blocking — failures never crash the response)
+    // h. Check for newly unlocked spirit species upon leveling up
+    let newlyUnlockedSpirits = [];
+    if (leveledUp) {
+      const prevLevel = character.level || 1;
+      try {
+        const { data: qualifiedSpecies } = await client
+          .from('spirit_species')
+          .select('*')
+          .gt('unlock_level', prevLevel)
+          .lte('unlock_level', level)
+          .order('unlock_level', { ascending: true });
+
+        if (qualifiedSpecies && qualifiedSpecies.length > 0) {
+          for (const sp of qualifiedSpecies) {
+            await client
+              .from('user_unlocked_spirits')
+              .insert({ user_id: userId, species_id: sp.id })
+              .maybeSingle();
+          }
+          newlyUnlockedSpirits = qualifiedSpecies;
+        }
+      } catch (uErr) {
+        console.warn('[Spirit Unlock Check Warn]', uErr.message);
+      }
+
+      // Fallback in-memory unlock tracking
+      try {
+        const fb = getOrCreateFallbackState(userId);
+        for (const [attr, spec] of Object.entries(FALLBACK_SPECIES)) {
+          if (spec.unlock_level > prevLevel && spec.unlock_level <= level) {
+            fb.unlocked_species.add(attr);
+            if (!newlyUnlockedSpirits.some((s) => s.attribute_type === attr)) {
+              newlyUnlockedSpirits.push({ ...spec, is_unlocked: true });
+            }
+          }
+        }
+      } catch (_fbErr) {}
+    }
+
+    // i. Check & award achievements (non-blocking — failures never crash the response)
     const newAchievements = await checkAchievements(userId, client);
 
-    // i. Return full updated data and celebration indicators
+    // j. Return full updated data and celebration indicators
     return res.status(200).json({
       message: 'Quest completed successfully!',
       quest: updatedQuest,
@@ -566,7 +605,8 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
       },
       newAchievements,
       newlyUnlockedRooms,
-      spiritEvolution
+      spiritEvolution,
+      newlyUnlockedSpirits
     });
 
   } catch (err) {

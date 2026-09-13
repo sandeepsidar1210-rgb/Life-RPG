@@ -16,6 +16,9 @@ export function ScholarProvider({ children }) {
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
   const [spirit, setSpirit] = useState(null);
+  const [menagerie, setMenagerie] = useState([]);
+  const [activeGreeting, setActiveGreeting] = useState(null);
+  const [spiritGreetingPending, setSpiritGreetingPending] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Interaction Loading States
@@ -166,13 +169,14 @@ export function ScholarProvider({ children }) {
     try {
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const [meRes, questsRes, itemsRes, invRes, roomsRes, spiritRes] = await Promise.all([
+      const [meRes, questsRes, itemsRes, invRes, roomsRes, spiritRes, menagerieRes] = await Promise.all([
         fetch(`${apiUrl}/api/me`, { headers }),
         fetch(`${apiUrl}/api/quests`, { headers }),
         fetch(`${apiUrl}/api/items`),
         fetch(`${apiUrl}/api/inventory`, { headers }),
         fetch(`${apiUrl}/api/rooms`, { headers }),
-        fetch(`${apiUrl}/api/spirit`, { headers })
+        fetch(`${apiUrl}/api/spirit`, { headers }),
+        fetch(`${apiUrl}/api/spirit/menagerie`, { headers })
       ]);
 
       if (!meRes.ok) throw new Error('Could not fetch profile');
@@ -193,6 +197,9 @@ export function ScholarProvider({ children }) {
       let spiritData = null;
       if (spiritRes && spiritRes.ok) spiritData = await spiritRes.json();
 
+      let menagerieData = null;
+      if (menagerieRes && menagerieRes.ok) menagerieData = await menagerieRes.json();
+
       setProfile(meData);
       setQuests(questsData.quests || []);
       setItems(itemsData.items || []);
@@ -202,6 +209,10 @@ export function ScholarProvider({ children }) {
         setSpirit(spiritData);
       } else if (meData.spirit) {
         setSpirit(meData.spirit);
+      }
+
+      if (menagerieData?.menagerie) {
+        setMenagerie(menagerieData.menagerie);
       }
 
       const fetchedRooms = roomsData.rooms || [];
@@ -477,6 +488,15 @@ export function ScholarProvider({ children }) {
       if (data.newAchievements && data.newAchievements.length > 0) {
         addAchievementNotifications(data.newAchievements);
       }
+
+      // Spirit Species Unlocks handling
+      if (data.newlyUnlockedSpirits && data.newlyUnlockedSpirits.length > 0) {
+        addToast(
+          `🐾 New Spirit Species Unlocked in Menagerie: ${data.newlyUnlockedSpirits.map((s) => s.name).join(', ')}!`,
+          'success'
+        );
+        fetchMenagerie();
+      }
     } catch (err) {
       addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
@@ -592,6 +612,149 @@ export function ScholarProvider({ children }) {
     }
   };
 
+  // =========================================================================
+  // Spirit Menagerie & Active Attunement
+  // =========================================================================
+  const fetchMenagerie = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${apiUrl}/api/spirit/menagerie`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMenagerie(data.menagerie || []);
+      }
+    } catch (err) {
+      console.warn('[Fetch Menagerie Error]', err);
+    }
+  }, [token]);
+
+  const handleSwitchActiveSpirit = useCallback(async (speciesIdOrAttr) => {
+    if (!token) return false;
+    try {
+      const isId = typeof speciesIdOrAttr === 'string' && (speciesIdOrAttr.startsWith('species-') || speciesIdOrAttr.length > 20);
+      const payload = isId ? { species_id: speciesIdOrAttr } : { attribute_type: speciesIdOrAttr };
+
+      const res = await fetch(`${apiUrl}/api/spirit/active`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        addToast(data.message || 'Could not attune to spirit species.', 'error');
+        return false;
+      }
+
+      playSound('equip');
+      addToast(data.message || 'Successfully attuned with spirit!', 'success');
+
+      // Refresh active spirit state
+      const spiritRes = await fetch(`${apiUrl}/api/spirit`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (spiritRes.ok) {
+        const newSpiritData = await spiritRes.json();
+        setSpirit(newSpiritData);
+      }
+      await fetchMenagerie();
+      return true;
+    } catch (err) {
+      console.error('[Switch Active Spirit Error]', err);
+      addToast(getFriendlyErrorMessage(err), 'error');
+      return false;
+    }
+  }, [token, addToast, playSound, fetchMenagerie]);
+
+  // =========================================================================
+  // Spirit Greeting Interaction & Cooldown Handling
+  // =========================================================================
+  const handleGreetSpirit = useCallback(async () => {
+    if (!token || spiritGreetingPending) return null;
+    try {
+      setSpiritGreetingPending(true);
+      const res = await fetch(`${apiUrl}/api/spirit/greet`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.status === 429) {
+        // Cooldown: gentle resting response without HTTP error toast
+        playSound('click');
+        setActiveGreeting({
+          text: data.resting_line || 'Your spirit is quietly recharging its celestial energy.',
+          isResting: true,
+          cooldownRemaining: data.cooldown_remaining_formatted || 'a few hours',
+          speciesName: data.species_name || spirit?.species?.name || 'Spirit',
+          timestamp: Date.now()
+        });
+        return { success: false, onCooldown: true, data };
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Could not greet spirit');
+      }
+
+      // Success
+      playSound('quest_complete');
+      setActiveGreeting({
+        text: data.flavor_line,
+        isResting: false,
+        cooldownRemaining: null,
+        speciesName: data.species_name || spirit?.species?.name || 'Spirit',
+        timestamp: Date.now()
+      });
+
+      // Update local spirit cooldown status
+      setSpirit((prev) => prev ? ({
+        ...prev,
+        greeting_status: {
+          is_on_cooldown: true,
+          cooldown_remaining_ms: 4 * 60 * 60 * 1000,
+          cooldown_remaining_formatted: '4h 0m',
+          cooldown_total_hours: 4
+        }
+      }) : prev);
+
+      return { success: true, onCooldown: false, data };
+    } catch (err) {
+      console.warn('[Greet Spirit Warning]', err);
+      setActiveGreeting({
+        text: 'Your spirit bobs peacefully, recharging its quiet celestial glow.',
+        isResting: true,
+        cooldownRemaining: 'a little while',
+        speciesName: spirit?.species?.name || 'Spirit',
+        timestamp: Date.now()
+      });
+      return { success: false, onCooldown: true };
+    } finally {
+      setSpiritGreetingPending(false);
+    }
+  }, [token, spiritGreetingPending, playSound, spirit]);
+
+  const dismissGreetingBubble = useCallback(() => {
+    setActiveGreeting(null);
+  }, []);
+
+  // Auto-dismiss greeting bubble after 7 seconds
+  useEffect(() => {
+    if (!activeGreeting) return;
+    const timer = setTimeout(() => {
+      setActiveGreeting(null);
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [activeGreeting]);
+
   const char = profile?.character || {
     level: 1,
     current_xp: 0,
@@ -626,6 +789,9 @@ export function ScholarProvider({ children }) {
         rooms,
         activeRoom,
         spirit,
+        menagerie,
+        activeGreeting,
+        spiritGreetingPending,
         loading,
         completingId,
         purchasingId,
@@ -638,6 +804,10 @@ export function ScholarProvider({ children }) {
         handleDeleteQuest,
         handlePurchaseItem,
         handleToggleEquip,
+        handleSwitchActiveSpirit,
+        handleGreetSpirit,
+        dismissGreetingBubble,
+        fetchMenagerie,
         refreshData: loadDashboardData,
         // Celebrations
         celebrationData,

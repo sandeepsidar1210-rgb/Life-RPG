@@ -23,7 +23,7 @@ import { AnimatedSpawnItem } from './AnimatedSpawnItem.jsx';
  * - Reading Nook: Deep forest green library, glowing stars, dusk crescent moon, velvet armchair.
  * - Garden Balcony: Sunlit open-air terrace, classical balustrade, rolling hills, flowering ivy.
  */
-export function RoomScene({ equippedNames = new Set(), roomName = 'Study Desk', spiritModelKey = null }) {
+export function RoomScene({ equippedNames = new Set(), roomName = 'Study Desk', spiritModelKey = null, onGreet = null }) {
   const isEquipped = (name) => equippedNames.has(name);
 
   // Determine room theme
@@ -97,7 +97,7 @@ export function RoomScene({ equippedNames = new Set(), roomName = 'Study Desk', 
 
       {/* --- Study Spirit Companion (Active Stage 3D Model) --- */}
       {spiritModelKey && (
-        <SpiritCompanion modelKey={spiritModelKey} roomName={roomName} />
+        <SpiritCompanion modelKey={spiritModelKey} roomName={roomName} onGreet={onGreet} />
       )}
 
       {/* --- 3D Equippable Companions (Animated) --- */}

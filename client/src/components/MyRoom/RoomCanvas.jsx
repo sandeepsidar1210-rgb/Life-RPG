@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { motion, AnimatePresence } from 'framer-motion';
 import { RoomScene } from './RoomScene.jsx';
+import { useScholar } from '../../context/ScholarContext.jsx';
 
 /**
  * RoomCanvas
@@ -18,6 +20,7 @@ export function RoomCanvas({
   const controlsRef = useRef();
   const containerRef = useRef();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { handleGreetSpirit, activeGreeting, dismissGreetingBubble, spiritGreetingPending } = useScholar();
 
   if (simulateWebGLFailure) {
     throw new Error('Simulated WebGL Initialization Failure');
@@ -120,7 +123,12 @@ export function RoomCanvas({
         }}
       >
         {/* Low-Poly 3D Sanctuary Room & Equippables */}
-        <RoomScene equippedNames={equippedNames} roomName={roomName} spiritModelKey={spiritModelKey} />
+        <RoomScene
+          equippedNames={equippedNames}
+          roomName={roomName}
+          spiritModelKey={spiritModelKey}
+          onGreet={handleGreetSpirit}
+        />
 
         <OrbitControls
           ref={controlsRef}
@@ -146,8 +154,61 @@ export function RoomCanvas({
         </span>
       </div>
 
-      {/* Action Buttons: Fullscreen & Reset Camera */}
+      {/* Interactive Spirit Greeting Speech Bubble Overlay */}
+      <AnimatePresence>
+        {activeGreeting && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            className={`absolute top-14 left-3 right-3 sm:left-4 sm:right-auto sm:max-w-md z-20 p-3.5 rounded-pixel border-2 shadow-pixel ${
+              activeGreeting.isResting
+                ? 'bg-cozy-parchment/95 backdrop-blur-md border-cozy-brown-dark text-cozy-brown-dark'
+                : 'bg-cozy-card/95 backdrop-blur-md border-amber-600 text-cozy-brown-dark ring-2 ring-amber-400/40'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-base" aria-hidden="true">{activeGreeting.isResting ? '🌙' : '✨'}</span>
+                <span className="font-pixel font-bold text-xs text-cozy-brown-dark">
+                  {activeGreeting.speciesName}
+                  {activeGreeting.isResting && (
+                    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-cozy-brown-dark/10 font-normal">
+                      Resting ({activeGreeting.cooldownRemaining})
+                    </span>
+                  )}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={dismissGreetingBubble}
+                className="touch-target text-xs text-cozy-brown-medium hover:text-cozy-brown-dark p-1 cursor-pointer"
+                aria-label="Dismiss greeting"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs mt-1.5 leading-relaxed italic font-pixel text-cozy-brown-dark">
+              "{activeGreeting.text}"
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Action Buttons: Greet Spirit, Fullscreen & Reset Camera */}
       <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+        <button
+          type="button"
+          onClick={() => handleGreetSpirit?.()}
+          disabled={spiritGreetingPending}
+          title="Greet your Study Companion"
+          aria-label="Greet your Study Companion"
+          className="touch-target px-3 py-1.5 bg-cozy-terracotta hover:bg-cozy-terracotta-dark text-white text-xs font-pixel rounded border-2 border-cozy-brown-dark shadow-pixel-sm transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-cozy-brown-dark cursor-pointer"
+        >
+          <span className={spiritGreetingPending ? "animate-spin" : ""} aria-hidden="true">✨</span>
+          <span>{spiritGreetingPending ? 'Greeting...' : 'Greet Spirit'}</span>
+        </button>
+
         <button
           type="button"
           onClick={handleResetCamera}
