@@ -882,33 +882,33 @@ function RoamingSpiritCompanion({ Component, roomName, onGreet = null }) {
   const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
   const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
 
-  // Custom organic flight waypoints per room
+  // Custom organic flight waypoints per room adapted to 16x16 expanded room scale
   const waypoints = useMemo(() => {
     if (isReadingNook) {
       return [
-        [-1.3, 1.4, 0.8],   // Beside velvet reading armchair
-        [-0.7, 1.8, -1.0],  // Starlight twilight window sill
-        [0.1, 1.4, 0.5],    // Hovering over emerald reading rug
-        [0.9, 1.7, -0.3],   // Browsing mahogany library shelves
-        [-0.5, 1.6, 0.9]    // Floating gently near reading lamp
+        [-2.4, 2.4, 1.6],   // Hovering near velvet armchair and reading lamp
+        [-4.8, 3.2, 0.4],   // Peeking out into starry twilight bay window
+        [1.2, 2.2, 1.8],    // Gliding over emerald velvet rug
+        [2.6, 3.4, -2.4],   // Inspecting the tall built-in library stacks
+        [-0.8, 2.6, 2.2]    // Peaceful hovering turn near tea table
       ];
     }
     if (isGardenBalcony) {
       return [
-        [-0.6, 1.4, 0.6],   // By wrought-iron bistro table
-        [-1.2, 1.6, -0.6],  // Hovering over flowering terrace planter
-        [0.8, 1.5, 0.8],    // Sunlit classical balustrade overlook
-        [0.2, 1.7, -0.2],   // Gentle breeze above terrace center
-        [1.1, 1.5, -0.7]    // Warm corner sunbeam
+        [-1.4, 2.4, 1.2],   // Breeze above marble bistro table
+        [-3.6, 2.6, -3.2],  // Hovering over flowering terrace planter ledge
+        [2.8, 2.5, 2.2],    // Sunlit corner overlook
+        [1.6, 3.0, -2.0],   // Gliding past classical stone balustrade
+        [-0.5, 2.6, 0.4]    // Warm center terrace hover
       ];
     }
     // Default: Study Desk
     return [
-      [-1.4, 1.5, 0.3],   // Beside classical wooden study desk
-      [-0.8, 1.8, -1.0],  // Near bright sunny window
-      [0.2, 1.45, 0.7],   // Gliding in a slow curve over the rug
-      [1.1, 1.6, -0.4],   // Near oak bookshelf & parchment shelves
-      [-0.4, 1.7, 0.2]    // Inquisitive peek above desk surface
+      [-2.8, 2.2, 0.8],   // Beside classical wooden study desk
+      [-4.6, 3.2, -1.2],  // Near bright sunny double window
+      [0.8, 2.2, 2.4],    // Gliding in a slow curve over the medallion rug
+      [3.2, 2.8, -1.2],   // Near oak bookshelf & wall shelves
+      [-0.6, 2.4, 0.4]    // Inquisitive peek above desk surface
     ];
   }, [isReadingNook, isGardenBalcony]);
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { resolveRoomPlacements, getPlacementHintForItem } from './placementZones.js';
 
 const ITEM_ICONS = {
   'Warm Desk Lamp': '💡',
@@ -9,42 +10,20 @@ const ITEM_ICONS = {
   'Oak Bookshelf': '📚',
   'Sleepy Calico Cat': '🐱',
   'Wise Study Owl': '🦉',
+  'Loyal Shiba Inu': '🐕',
+  'Grandfather Clock': '🕰️',
+  'Velvet Reading Armchair': '🛋️',
+  'Vintage Brass Astrolabe': '🧭',
+  'Monstera Deliciosa': '🌿',
+  'Starlight Candle Trio': '🕯️',
+  'Cozy Floor Pouf': '🧶',
+  'Antique Gramophone': '🎺',
+  'Terracotta Herb Planter': '🌱',
+  'Woven Persian Rug': '🧶',
   'Dawn Scholar Badge': '🌅',
-  'Midnight Oil Badge': '🌙'
-};
-
-const getItemHint = (itemName, roomName = '') => {
-  const isReadingNook = roomName.includes('Reading') || roomName.includes('Nook');
-  const isGardenBalcony = roomName.includes('Garden') || roomName.includes('Balcony');
-
-  if (itemName === 'Warm Desk Lamp') {
-    return isReadingNook ? 'Reading Side Table (Amber Lamp)' : isGardenBalcony ? 'Bistro Table (Terrace Lantern)' : 'Desk (Warm Golden Glow)';
-  }
-  if (itemName === 'Ceremonial Matcha Bowl') {
-    return isReadingNook ? 'Side Table (Steaming Matcha by Armchair)' : isGardenBalcony ? 'Bistro Table (Fresh Mountain Tea)' : 'Desk (Frothy Matcha)';
-  }
-  if (itemName === 'Lo-Fi Cassette Player') {
-    return isReadingNook ? 'Bookshelf Shelf (Library Melodies)' : isGardenBalcony ? 'Bistro Table (Terrace Tunes)' : 'Desk (Spinning Reels)';
-  }
-  if (itemName === 'Potted Succulent') {
-    return isReadingNook ? 'Twilight Window Sill' : isGardenBalcony ? 'Stone Planter Ledge' : 'Desk Window / Ledge';
-  }
-  if (itemName === 'Zen Bonsai Tree') {
-    return isReadingNook ? 'Library Corner Pedestal' : isGardenBalcony ? 'Terrace Garden Pedestal' : 'Display Pedestal';
-  }
-  if (itemName === 'Oak Bookshelf') {
-    return isReadingNook ? 'Library Wall Alcove' : isGardenBalcony ? 'Covered Terrace Alcove' : 'Wall Bookshelf';
-  }
-  if (itemName === 'Sleepy Calico Cat') {
-    return isReadingNook ? 'Plush Emerald Rug' : isGardenBalcony ? 'Sunlit Terracotta Pavers' : 'Cozy Woven Rug';
-  }
-  if (itemName === 'Wise Study Owl') {
-    return isReadingNook ? 'Twilight Perch' : isGardenBalcony ? 'Balcony Corner Perch' : 'Rustic Perch';
-  }
-  if (itemName?.includes('Badge')) {
-    return 'Scholar Profile / Header HUD';
-  }
-  return roomName;
+  'Midnight Oil Badge': '🌙',
+  'Master Archivist Badge': '📜',
+  'Celestial Horizon Badge': '✨'
 };
 
 export function RoomTrunkPanel({
@@ -72,6 +51,21 @@ export function RoomTrunkPanel({
 
   const roomName = activeRoom?.name || 'Study Desk';
   const activeRoomId = activeRoom?.id;
+
+  // Set of equipped item names in this active chamber
+  const equippedNames = useMemo(() => {
+    return new Set(
+      inventory
+        .filter((inv) => inv.equipped && (inv.room_id === activeRoomId || inv.item?.category === 'companion'))
+        .map((inv) => inv.item?.name)
+        .filter(Boolean)
+    );
+  }, [inventory, activeRoomId]);
+
+  // Live chamber zone occupancy calculation
+  const { zoneOccupancy, totalZones, occupiedCount, isFull } = useMemo(() => {
+    return resolveRoomPlacements(equippedNames, roomName);
+  }, [equippedNames, roomName]);
 
   return (
     <section 
@@ -101,7 +95,7 @@ export function RoomTrunkPanel({
         </button>
       </div>
 
-      {/* Category Tabs with ARIA and full keyboard support */}
+      {/* Category Tabs */}
       <div 
         role="tablist" 
         aria-label="Trunk item categories"
@@ -128,11 +122,48 @@ export function RoomTrunkPanel({
         })}
       </div>
 
+      {/* Designated Placement Zones Availability Widget */}
+      <div className="bg-cozy-parchment/60 p-3 rounded-pixel border border-cozy-border space-y-2">
+        <div className="flex items-center justify-between text-xs font-pixel">
+          <span className="text-cozy-brown-dark font-bold flex items-center gap-1.5">
+            <span>📍</span> Placement Zones ({occupiedCount}/{totalZones})
+          </span>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+            isFull ? 'bg-amber-600/20 text-amber-800' : 'bg-cozy-sage/20 text-cozy-sage-dark'
+          }`}>
+            {isFull ? 'All Zones Occupied' : `${totalZones - occupiedCount} Empty`}
+          </span>
+        </div>
+
+        {/* 6 Fixed Placement Anchor Points */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+          {zoneOccupancy.map((zone) => (
+            <div
+              key={zone.zoneId}
+              className={`px-2 py-1.5 rounded border text-[10px] font-pixel transition flex flex-col justify-center ${
+                zone.isOccupied
+                  ? 'bg-cozy-card border-cozy-sage-dark/60 text-cozy-brown-dark shadow-pixel-xs'
+                  : 'bg-cozy-card/40 border-dashed border-cozy-border text-cozy-brown-medium'
+              }`}
+            >
+              <div className="font-bold truncate">{zone.label}</div>
+              <div className="text-[9px] truncate">
+                {zone.isOccupied ? (
+                  <span className="text-cozy-sage-dark font-sans font-medium">✓ {zone.occupiedBy}</span>
+                ) : (
+                  <span className="italic text-cozy-brown-light">Empty</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Items List */}
       <div 
         role="region"
         aria-label="Trunk items"
-        className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1"
+        className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1"
       >
         {filteredItems.length === 0 ? (
           <div className="text-center py-6 text-xs text-cozy-brown-medium italic bg-cozy-parchment/60 rounded-pixel border border-dashed border-cozy-border">
@@ -146,12 +177,16 @@ export function RoomTrunkPanel({
             const isCompanion = item?.category === 'companion';
             const isBadge = item?.category === 'badge';
 
-            // Room-scoped states: unassigned decor defaults cleanly to Study Desk (display_order 1)
+            // Room-scoped states
             const defaultRoomId = (rooms || []).find((r) => r.display_order === 1)?.id || rooms[0]?.id;
             const itemRoomId = inv.room_id || defaultRoomId;
             const isEquippedInThisRoom = isEquipped && itemRoomId === activeRoomId;
             const isEquippedInOtherRoom = isEquipped && itemRoomId !== activeRoomId;
             const otherRoomName = inv.room?.name || (rooms || []).find((r) => r.id === itemRoomId)?.name || 'another chamber';
+
+            // Zone availability check for unequipped decor
+            const placementHint = getPlacementHintForItem(item?.name, equippedNames, roomName);
+            const cannotPlaceDecor = !isEquippedInThisRoom && !isCompanion && !isBadge && isFull;
 
             let actionText = 'Place';
             let buttonStyle = 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
@@ -172,23 +207,27 @@ export function RoomTrunkPanel({
                 actionText = 'Recall';
                 buttonStyle = 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-cozy-terracotta-dark';
               } else if (isEquippedInOtherRoom) {
-                actionText = 'Move Here';
-                buttonStyle = 'bg-cozy-parchment hover:bg-cozy-sage text-cozy-brown-dark hover:text-white border-cozy-sage-dark';
+                actionText = cannotPlaceDecor ? 'Chamber Full' : 'Move Here';
+                buttonStyle = cannotPlaceDecor 
+                  ? 'bg-cozy-parchment text-cozy-brown-medium border-cozy-border opacity-60 cursor-not-allowed'
+                  : 'bg-cozy-parchment hover:bg-cozy-sage text-cozy-brown-dark hover:text-white border-cozy-sage-dark';
               } else {
-                actionText = 'Place';
-                buttonStyle = 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
+                actionText = cannotPlaceDecor ? 'Zones Full' : 'Place';
+                buttonStyle = cannotPlaceDecor
+                  ? 'bg-cozy-parchment text-cozy-brown-medium border-cozy-border opacity-60 cursor-not-allowed'
+                  : 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
               }
             }
 
             const handleItemClick = () => {
+              if (cannotPlaceDecor) return;
+
               if (isCompanion || isBadge) {
                 onToggleEquip(inv.id, activeRoomId, !isEquipped);
               } else {
                 if (isEquippedInThisRoom) {
-                  // Unequip from this room
                   onToggleEquip(inv.id, activeRoomId, false);
                 } else {
-                  // Place or move to this room
                   onToggleEquip(inv.id, activeRoomId, true);
                 }
               }
@@ -243,7 +282,7 @@ export function RoomTrunkPanel({
                       {item?.description}
                     </p>
                     <p className="text-[10px] text-cozy-sage-dark font-pixel mt-0.5">
-                      📍 {getItemHint(item?.name, roomName)}
+                      📍 {placementHint}
                     </p>
                   </div>
                 </div>
@@ -252,7 +291,7 @@ export function RoomTrunkPanel({
                 <button
                   type="button"
                   onClick={handleItemClick}
-                  disabled={isEquipping}
+                  disabled={isEquipping || cannotPlaceDecor}
                   aria-label={`${actionText} ${item?.name}`}
                   className={`touch-target pixel-box px-3.5 py-2 rounded text-xs font-pixel font-bold transition flex-shrink-0 disabled:opacity-50 border-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cozy-brown-dark ${buttonStyle}`}
                 >
@@ -272,7 +311,7 @@ export function RoomTrunkPanel({
       <div className="text-[11px] text-cozy-brown-medium bg-cozy-parchment/60 p-2.5 rounded-pixel border border-cozy-border flex items-start gap-2">
         <span className="text-sm select-none" aria-hidden="true">💡</span>
         <span>
-          <strong>Decor</strong> is placed specifically in <em>{roomName}</em>. <strong>Companions</strong> join you wherever you study!
+          <strong>Decor</strong> automatically snaps to designated non-overlapping anchor zones in <em>{roomName}</em>. <strong>Companions</strong> have dedicated resting spots and accompany you wherever you study!
         </span>
       </div>
     </section>

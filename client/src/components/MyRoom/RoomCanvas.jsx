@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { RoomScene } from './RoomScene.jsx';
 import { useScholar } from '../../context/ScholarContext.jsx';
 
@@ -109,12 +110,13 @@ export function RoomCanvas({
 
       <Canvas
         tabIndex={-1}
+        shadows
         dpr={Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2)}
         camera={{
-          position: isFullscreen ? [6.2, 5.0, 6.2] : [6.6, 5.4, 6.6],
-          fov: isFullscreen ? 38 : 40,
+          position: isFullscreen ? [12.5, 10.0, 12.5] : [13.5, 11.0, 13.5],
+          fov: isFullscreen ? 40 : 42,
           near: 0.1,
-          far: 50
+          far: 80
         }}
         gl={{
           antialias: true,
@@ -130,17 +132,27 @@ export function RoomCanvas({
           onGreet={handleGreetSpirit}
         />
 
+        {/* Subtle Bloom Post-Processing on Warm Light Sources */}
+        <EffectComposer multisampling={0} disableNormalPass>
+          <Bloom
+            luminanceThreshold={0.85}
+            luminanceSmoothing={0.2}
+            intensity={0.4}
+            mipmapBlur
+          />
+        </EffectComposer>
+
         <OrbitControls
           ref={controlsRef}
           makeDefault={true}
           enablePan={false}
           minPolarAngle={Math.PI / 6}
-          maxPolarAngle={Math.PI / 2 - 0.06}
-          minDistance={isFullscreen ? 4.5 : 5.2}
-          maxDistance={isFullscreen ? 14.0 : 12.5}
+          maxPolarAngle={Math.PI / 2 - 0.05}
+          minDistance={isFullscreen ? 7.5 : 8.5}
+          maxDistance={isFullscreen ? 28.0 : 26.0}
           minAzimuthAngle={-Math.PI / 3.8}
           maxAzimuthAngle={Math.PI / 3.2}
-          target={[0, 1.2, 0]}
+          target={[0, 1.8, 0]}
           enableDamping={true}
           dampingFactor={0.06}
         />
