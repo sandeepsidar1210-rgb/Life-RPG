@@ -161,7 +161,7 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
                     }
                     className={`touch-target pixel-box-interactive text-xs font-pixel font-bold px-3.5 py-2 rounded-pixel transition flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark ${
                       canAfford
-                        ? 'bg-cozy-gold-base hover:bg-cozy-gold-dark text-white shadow-pixel-sm'
+                        ? 'bg-cozy-gold-base hover:bg-cozy-gold-dark text-white dark:text-cozy-brown-dark shadow-pixel-sm'
                         : 'bg-cozy-brown-subtle text-cozy-brown-light cursor-not-allowed opacity-70'
                     }`}
                   >

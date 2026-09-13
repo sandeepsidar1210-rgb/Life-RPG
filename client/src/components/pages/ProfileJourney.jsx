@@ -75,10 +75,10 @@ export function ProfileJourney() {
   // =========================================================================
   const radarData = useMemo(() => {
     const stats = [
-      { key: 'focus', name: 'Focus', val: character.focus || 1, icon: '🎯', color: '#285873' },
-      { key: 'discipline', name: 'Discipline', val: character.discipline || 1, icon: '⏳', color: '#8F5B10' },
-      { key: 'vitality', name: 'Vitality', val: character.vitality || 1, icon: '🌿', color: '#355E3B' },
-      { key: 'creativity', name: 'Creativity', val: character.creativity || 1, icon: '🎨', color: '#A03E22' },
+      { key: 'focus', name: 'Focus', val: character.focus || 1, icon: '🎯', color: 'var(--color-stat-focus)' },
+      { key: 'discipline', name: 'Discipline', val: character.discipline || 1, icon: '⏳', color: 'var(--color-stat-discipline)' },
+      { key: 'vitality', name: 'Vitality', val: character.vitality || 1, icon: '🌿', color: 'var(--color-stat-vitality)' },
+      { key: 'creativity', name: 'Creativity', val: character.creativity || 1, icon: '🎨', color: 'var(--color-stat-creativity)' },
     ];
 
     const maxVal = Math.max(10, ...stats.map((s) => s.val));
@@ -165,7 +165,7 @@ export function ProfileJourney() {
       </div>
 
       {/* Identity Card */}
-      <div className="pixel-box bg-cozy-card p-5 sm:p-6 rounded-pixel border-2 border-cozy-brown-dark bg-gradient-to-br from-white via-cozy-cream to-cozy-parchment/50">
+      <div className="pixel-box bg-cozy-card p-5 sm:p-6 rounded-pixel border-2 border-cozy-brown-dark bg-gradient-to-br from-cozy-card to-cozy-parchment/50">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 pixel-box bg-cozy-parchment rounded-pixel flex items-center justify-center text-3xl border-2 border-cozy-brown-dark shadow-pixel-sm select-none shrink-0">
@@ -415,7 +415,7 @@ export function ProfileJourney() {
                 icon: '🎯',
                 spirit: 'Emberwisp (Steam/Matcha)',
                 desc: 'Concentration, deep reading, and unwavering single-task devotion.',
-                color: 'text-[#285873]'
+                color: 'text-cozy-stats-focus'
               },
               {
                 id: 'discipline',
@@ -424,7 +424,7 @@ export function ProfileJourney() {
                 icon: '⏳',
                 spirit: 'Rootling (Stone/Moss)',
                 desc: 'Consistency, morning rituals, punctuality, and unwavering resolve.',
-                color: 'text-[#8F5B10]'
+                color: 'text-cozy-stats-discipline'
               },
               {
                 id: 'vitality',
@@ -433,7 +433,7 @@ export function ProfileJourney() {
                 icon: '🌿',
                 spirit: 'Sproutling (Leaf/Vine)',
                 desc: 'Physical wellness, restful breaks, fresh air, and rejuvenating sleep.',
-                color: 'text-[#355E3B]'
+                color: 'text-cozy-stats-vitality'
               },
               {
                 id: 'creativity',
@@ -442,7 +442,7 @@ export function ProfileJourney() {
                 icon: '🎨',
                 spirit: 'Inkling (Ink/Starlight)',
                 desc: 'Imaginative writing, synthesis, exploratory sketches, and curiosity.',
-                color: 'text-[#A03E22]'
+                color: 'text-cozy-stats-creativity'
               },
             ].map((stat) => (
               <div
@@ -463,7 +463,7 @@ export function ProfileJourney() {
                     {stat.desc}
                   </p>
                 </div>
-                <span className="font-pixel text-sm px-2 py-1 bg-white rounded border border-cozy-border shadow-pixel-xs font-bold text-cozy-brown-dark shrink-0">
+                <span className="font-pixel text-sm px-2 py-1 bg-cozy-card rounded border border-cozy-border shadow-pixel-xs font-bold text-cozy-brown-dark shrink-0">
                   +{stat.val}
                 </span>
               </div>

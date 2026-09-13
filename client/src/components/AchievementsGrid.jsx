@@ -39,8 +39,8 @@ function AchievementCard({ achievement }) {
       aria-label={`${name} achievement — ${unlocked ? 'unlocked' : 'locked'}`}
       className={`relative pixel-box rounded-pixel border-2 p-4 flex flex-col gap-3 transition-all duration-200 ${
         unlocked
-          ? 'bg-gradient-to-br from-cozy-parchment via-white to-cozy-sage-subtle border-cozy-sage-dark shadow-pixel'
-          : 'bg-cozy-parchment/50 border-cozy-border opacity-70'
+          ? 'bg-cozy-card bg-gradient-to-br from-cozy-card to-cozy-sage-subtle/30 border-cozy-sage-dark shadow-pixel'
+          : 'bg-cozy-parchment/40 border-cozy-border opacity-75'
       }`}
     >
       {/* Locked overlay shimmer */}
@@ -67,12 +67,12 @@ function AchievementCard({ achievement }) {
         </div>
 
         {unlocked ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cozy-sage text-white text-[10px] font-pixel rounded border border-cozy-sage-dark shadow-pixel-sm">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-cozy-sage text-white text-[10px] font-pixel rounded border border-cozy-sage-dark shadow-pixel-sm font-bold">
             <span aria-hidden="true">✓</span>
             <span>Unlocked</span>
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cozy-brown-subtle text-cozy-brown-medium text-[10px] font-pixel rounded border border-cozy-border">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-cozy-brown-subtle text-cozy-brown-dark text-[10px] font-pixel rounded border border-cozy-border font-bold">
             <span aria-hidden="true">🔒</span>
             <span>Locked</span>
           </span>
@@ -80,24 +80,24 @@ function AchievementCard({ achievement }) {
       </div>
 
       {/* Name & Description */}
-      <div className="space-y-1 flex-1">
-        <h3 className={`font-pixel text-sm leading-tight ${unlocked ? 'text-cozy-brown-dark' : 'text-cozy-brown-medium'}`}>
+      <div className="space-y-1.5 flex-1">
+        <h3 className={`font-pixel text-sm leading-tight font-bold ${unlocked ? 'text-cozy-brown-dark' : 'text-cozy-brown-dark/80'}`}>
           {name}
         </h3>
-        <p className="text-[11px] text-cozy-brown-medium leading-relaxed">
+        <p className={`text-xs leading-relaxed ${unlocked ? 'text-cozy-brown-dark font-normal' : 'text-cozy-brown-medium'}`}>
           {description}
         </p>
       </div>
 
       {/* Footer: criteria & reward */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-cozy-border">
-        <span className="text-[10px] font-pixel text-cozy-brown-medium bg-cozy-cream px-1.5 py-0.5 rounded border border-cozy-border">
+      <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-cozy-border">
+        <span className="text-[10px] font-pixel text-cozy-brown-dark bg-cozy-parchment px-2 py-0.5 rounded border border-cozy-border font-semibold">
           {displayLabel}
         </span>
 
         {reward_coins > 0 && (
           <span
-            className={`text-[10px] font-pixel flex items-center gap-1 ${unlocked ? 'text-cozy-sage-dark' : 'text-cozy-brown-medium'}`}
+            className={`text-[10px] font-pixel font-bold flex items-center gap-1 ${unlocked ? 'text-cozy-gold-dark' : 'text-cozy-brown-medium'}`}
             aria-label={`Reward: ${reward_coins} Cozy Coins`}
           >
             <span aria-hidden="true">🪙</span>
@@ -108,8 +108,8 @@ function AchievementCard({ achievement }) {
 
       {/* Unlock date */}
       {unlocked && unlockedDate && (
-        <p className="text-[10px] text-cozy-sage-dark font-pixel">
-          Unlocked {unlockedDate}
+        <p className="text-[10px] text-cozy-sage-dark font-pixel font-bold">
+          ✓ Unlocked {unlockedDate}
         </p>
       )}
     </motion.article>

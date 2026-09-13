@@ -126,7 +126,7 @@ export function CelebrationModal({ isOpen, onClose, levelData, triggerRef }) {
             🏆
           </div>
 
-          <span className="inline-block px-3 py-1 bg-cozy-gold-base text-white text-xs font-pixel rounded-pixel font-bold mb-2 shadow-pixel-sm">
+          <span className="inline-block px-3 py-1 bg-cozy-gold-base text-white dark:text-cozy-brown-dark text-xs font-pixel rounded-pixel font-bold mb-2 shadow-pixel-sm">
             {levelsGained > 1 ? `MULTI-LEVEL UP! (+${levelsGained} LEVELS)` : 'LEVEL UP!'}
           </span>
 

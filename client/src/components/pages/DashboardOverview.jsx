@@ -60,7 +60,7 @@ export function DashboardOverview() {
       {/* Character Progression & Non-linear Level Card */}
       <section 
         aria-labelledby="char-stats-heading"
-        className="pixel-box bg-cozy-card p-5 sm:p-6 rounded-pixel border-2 border-cozy-brown-dark bg-gradient-to-br from-white to-cozy-parchment/60"
+        className="pixel-box bg-cozy-card p-5 sm:p-6 rounded-pixel border-2 border-cozy-brown-dark bg-gradient-to-br from-cozy-card to-cozy-parchment/60"
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
           <div>
@@ -125,7 +125,7 @@ export function DashboardOverview() {
                 <span className="text-base" aria-hidden="true">{stat.icon}</span>
                 <span className="font-pixel text-xs text-cozy-brown-dark font-bold">{stat.name}</span>
               </div>
-              <span className="font-pixel text-xs font-bold px-2 py-0.5 bg-white rounded border border-cozy-border shadow-pixel-sm">
+              <span className="font-pixel text-xs font-bold px-2 py-0.5 bg-cozy-card text-cozy-brown-dark rounded border border-cozy-border shadow-pixel-sm">
                 LVL {stat.val}
               </span>
             </motion.div>

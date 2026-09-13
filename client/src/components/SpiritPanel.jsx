@@ -149,8 +149,8 @@ export const getAttrTheme = (attr = 'focus') => {
       return {
         title: 'Discipline',
         icon: '🛡️',
-        color: 'text-emerald-800',
-        bgColor: 'bg-emerald-100',
+        color: 'text-cozy-stats-discipline',
+        bgColor: 'bg-cozy-sage-subtle',
         borderColor: 'border-emerald-600',
         bannerBg: 'bg-gradient-to-r from-emerald-800 to-teal-900',
         lightColor: '#A7F3D0'
@@ -159,8 +159,8 @@ export const getAttrTheme = (attr = 'focus') => {
       return {
         title: 'Vitality',
         icon: '🌱',
-        color: 'text-rose-800',
-        bgColor: 'bg-rose-100',
+        color: 'text-cozy-stats-vitality',
+        bgColor: 'bg-cozy-terracotta-subtle',
         borderColor: 'border-rose-600',
         bannerBg: 'bg-gradient-to-r from-rose-800 to-amber-900',
         lightColor: '#FECDD3'
@@ -169,8 +169,8 @@ export const getAttrTheme = (attr = 'focus') => {
       return {
         title: 'Creativity',
         icon: '✨',
-        color: 'text-indigo-800',
-        bgColor: 'bg-indigo-100',
+        color: 'text-cozy-stats-creativity',
+        bgColor: 'bg-cozy-parchment',
         borderColor: 'border-indigo-600',
         bannerBg: 'bg-gradient-to-r from-indigo-900 to-violet-950',
         lightColor: '#C7D2FE'
@@ -179,8 +179,8 @@ export const getAttrTheme = (attr = 'focus') => {
       return {
         title: 'Focus',
         icon: '🔥',
-        color: 'text-amber-800',
-        bgColor: 'bg-amber-100',
+        color: 'text-cozy-stats-focus',
+        bgColor: 'bg-cozy-gold-light',
         borderColor: 'border-amber-600',
         bannerBg: 'bg-gradient-to-r from-amber-700 to-orange-900',
         lightColor: '#FDE68A'
@@ -503,7 +503,7 @@ export function SpiritPanel({
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
                             maxLength={24}
-                            className="px-2 py-1 text-sm font-pixel font-bold rounded border-2 border-cozy-brown-dark bg-white text-cozy-brown-dark focus:outline-none focus:ring-2 focus:ring-cozy-sage"
+                            className="px-2 py-1 text-sm font-pixel font-bold rounded border-2 border-cozy-brown-dark bg-cozy-card text-cozy-brown-dark focus:outline-none focus:ring-2 focus:ring-cozy-sage"
                             autoFocus
                           />
                           <button

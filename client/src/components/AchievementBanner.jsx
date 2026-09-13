@@ -41,7 +41,7 @@ export function AchievementBanner({ achievement, onDismiss }) {
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="fixed bottom-20 right-5 z-50 max-w-xs w-full sm:max-w-sm pointer-events-auto"
         >
-          <div className="pixel-box bg-gradient-to-br from-cozy-parchment via-white to-cozy-sage-subtle border-2 border-cozy-sage-dark rounded-pixel shadow-pixel p-4 flex items-start gap-3">
+          <div className="pixel-box bg-cozy-card bg-gradient-to-br from-cozy-card to-cozy-sage-subtle/30 border-2 border-cozy-sage-dark rounded-pixel shadow-pixel p-4 flex items-start gap-3">
             {/* Icon */}
             <div
               aria-hidden="true"
@@ -52,17 +52,17 @@ export function AchievementBanner({ achievement, onDismiss }) {
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-pixel text-cozy-sage-dark uppercase tracking-wider mb-0.5">
+              <p className="text-[10px] font-pixel text-cozy-sage-dark font-bold uppercase tracking-wider mb-0.5">
                 🏆 Achievement Unlocked!
               </p>
-              <p className="font-pixel text-sm text-cozy-brown-dark leading-tight mb-1">
+              <p className="font-pixel text-sm text-cozy-brown-dark font-bold leading-tight mb-1">
                 {achievement.name}
               </p>
-              <p className="text-[11px] text-cozy-brown-medium leading-relaxed line-clamp-2">
+              <p className="text-[11px] text-cozy-brown-dark leading-relaxed line-clamp-2">
                 {achievement.description}
               </p>
               {achievement.reward_coins > 0 && (
-                <p className="text-[11px] font-pixel text-cozy-sage-dark mt-1 flex items-center gap-1">
+                <p className="text-[11px] font-pixel text-cozy-gold-dark font-bold mt-1 flex items-center gap-1">
                   <span aria-hidden="true">🪙</span>
                   <span>+{achievement.reward_coins} Cozy Coins earned!</span>
                 </p>

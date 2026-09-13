@@ -97,7 +97,7 @@ export function RoomSwitcher({
                     className={`w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0 border ${
                       isActive
                         ? 'bg-cozy-sage text-white border-cozy-sage-dark shadow-pixel-sm'
-                        : 'bg-white/80 text-cozy-brown-dark border-cozy-border'
+                        : 'bg-cozy-card text-cozy-brown-dark border-cozy-border'
                     }`}
                     aria-hidden="true"
                   >
@@ -116,7 +116,7 @@ export function RoomSwitcher({
                 </div>
 
                 <div
-                  className="flex-shrink-0 text-[10px] font-pixel px-2 py-0.5 rounded bg-white border border-cozy-border text-cozy-brown-dark shadow-pixel-xs"
+                  className="flex-shrink-0 text-[10px] font-pixel px-2 py-0.5 rounded bg-cozy-card border border-cozy-border text-cozy-brown-dark shadow-pixel-xs"
                   title={`${placedCount} items placed here`}
                 >
                   {placedCount} placed
