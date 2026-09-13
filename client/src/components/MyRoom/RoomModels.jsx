@@ -350,11 +350,11 @@ export function LoFiCassettePlayerModel() {
 
 /**
  * 4. Potted Succulent
- * Terracotta pot, dark soil, clustered geometric jade leaves. Positioned on the window sill.
+ * Terracotta pot, dark soil, clustered geometric jade leaves. Positioned cleanly on the study desk.
  */
 export function PottedSucculentModel() {
   return (
-    <group position={[-3.46, 2.95, -0.8]}>
+    <group position={[1.05, 1.4, 0.15]}>
       {/* Terracotta Planter */}
       <mesh position={[0, 0.12, 0]}>
         <cylinderGeometry args={[0.14, 0.1, 0.24, 14]} />

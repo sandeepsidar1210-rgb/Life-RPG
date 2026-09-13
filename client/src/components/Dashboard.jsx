@@ -274,12 +274,19 @@ export function Dashboard({ defaultTab = 'quests' }) {
   };
 
   // 6. Equip / Unequip Item (with Optimistic UI and rollback)
-  const handleToggleEquip = async (inventoryId, targetEquipped) => {
+  const handleToggleEquip = async (inventoryId) => {
     setEquippingId(inventoryId);
 
     // Save previous inventory for rollback
     const previousInventory = [...inventory];
     const targetItem = previousInventory.find((i) => i.id === inventoryId);
+    if (!targetItem) {
+      setEquippingId(null);
+      return;
+    }
+
+    // Toggle: if currently true -> false; if currently false -> true
+    const targetEquipped = !targetItem.equipped;
     const category = targetItem?.item?.category;
 
     // Optimistic UI update

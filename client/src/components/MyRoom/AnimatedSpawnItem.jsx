@@ -20,6 +20,11 @@ export function AnimatedSpawnItem({
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
+    // When item is equipped, immediately ensure the group is visible for the spring animation
+    if (isEquipped && !groupRef.current.visible) {
+      groupRef.current.visible = true;
+    }
+
     // Cap delta to prevent crazy physics jumps on tab blur
     const dt = Math.min(delta, 0.05);
 
