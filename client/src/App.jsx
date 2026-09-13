@@ -13,17 +13,33 @@ export default function App() {
           {/* Public Authentication Route */}
           <Route path="/login" element={<AuthScreen />} />
 
-          {/* Protected Dashboard Route */}
+          {/* Protected Dashboard Routes */}
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Dashboard defaultTab="quests" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/room"
+            element={
+              <ProtectedRoute>
+                <Dashboard defaultTab="room" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/shop"
+            element={
+              <ProtectedRoute>
+                <Dashboard defaultTab="shop" />
               </ProtectedRoute>
             }
           />
 
-          {/* Root redirect to Dashboard (which redirects to /login if unauthenticated) */}
+          {/* Root redirect to Dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

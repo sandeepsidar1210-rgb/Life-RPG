@@ -1,30 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { motion } from 'framer-motion';
 import { QuestList } from './QuestList.jsx';
 import { ShopCatalog } from './ShopCatalog.jsx';
+import { MyRoom } from './MyRoom.jsx';
 import { CelebrationModal } from './CelebrationModal.jsx';
 import { ToastContainer } from './Toast.jsx';
 
-export function Dashboard() {
+export function Dashboard({ defaultTab = 'quests' }) {
   const { user, token, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Navigation tab: 'quests' | 'shop'
-  const [activeTab, setActiveTab] = useState('quests');
+  // Determine active tab from URL path or default prop
+  const getTabFromPath = () => {
+    if (location.pathname.includes('/room')) return 'room';
+    if (location.pathname.includes('/shop')) return 'shop';
+    return defaultTab || 'quests';
+  };
 
-  // Character, streaks, quests, items & inventory state
+  const [activeTab, setActiveTab] = useState(getTabFromPath());
+
+  useEffect(() => {
+    setActiveTab(getTabFromPath());
+  }, [location.pathname]);
+
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'room') {
+      navigate('/dashboard/room');
+    } else if (tab === 'shop') {
+      navigate('/dashboard/shop');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  // State
   const [profile, setProfile] = useState(null);
   const [quests, setQuests] = useState([]);
   const [items, setItems] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Interaction loading states
   const [completingId, setCompletingId] = useState(null);
   const [purchasingId, setPurchasingId] = useState(null);
+  const [equippingId, setEquippingId] = useState(null);
 
-  // Level-up celebration state & trigger ref for focus return
+  // Level-up celebration state & trigger ref
   const [celebrationData, setCelebrationData] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const activeTriggerRef = useRef(null);
@@ -44,10 +69,9 @@ export function Dashboard() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Base API URL
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  // Fetch initial profile, quests, and catalog
+  // Fetch initial profile, quests, inventory, and catalog
   useEffect(() => {
     let isSubscribed = true;
 
@@ -57,29 +81,30 @@ export function Dashboard() {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        const [meRes, questsRes, itemsRes] = await Promise.all([
+        const [meRes, questsRes, itemsRes, invRes] = await Promise.all([
           fetch(`${apiUrl}/api/me`, { headers }),
           fetch(`${apiUrl}/api/quests`, { headers }),
-          fetch(`${apiUrl}/api/items`)
+          fetch(`${apiUrl}/api/items`),
+          fetch(`${apiUrl}/api/inventory`, { headers })
         ]);
 
         if (!meRes.ok) throw new Error('Could not fetch profile');
         const meData = await meRes.json();
 
         let questsData = { quests: [] };
-        if (questsRes.ok) {
-          questsData = await questsRes.json();
-        }
+        if (questsRes.ok) questsData = await questsRes.json();
 
         let itemsData = { items: [] };
-        if (itemsRes.ok) {
-          itemsData = await itemsRes.json();
-        }
+        if (itemsRes.ok) itemsData = await itemsRes.json();
+
+        let invData = { inventory: [] };
+        if (invRes.ok) invData = await invRes.json();
 
         if (isSubscribed) {
           setProfile(meData);
           setQuests(questsData.quests || []);
           setItems(itemsData.items || []);
+          setInventory(invData.inventory || meData.inventory || []);
         }
       } catch (err) {
         console.error('[Dashboard Load Error]', err);
@@ -162,7 +187,7 @@ export function Dashboard() {
     }
   };
 
-  // 4. Complete Quest (Core Progression Handler)
+  // 4. Complete Quest
   const handleCompleteQuest = async (questId) => {
     setCompletingId(questId);
     activeTriggerRef.current = document.activeElement;
@@ -183,27 +208,20 @@ export function Dashboard() {
         return;
       }
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to complete quest');
-      }
+      if (!res.ok) throw new Error(data.message || 'Failed to complete quest');
 
-      // Update quests list
       setQuests((prev) => prev.map((q) => (q.id === questId ? data.quest : q)));
-
-      // Update character & streaks state
       setProfile((prev) => ({
         ...prev,
         character: data.character,
         streak: data.streak
       }));
 
-      // Toast reward summary
       addToast(
         `Quest completed! +${data.rewards.focus_points} Focus Points, +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
         'success'
       );
 
-      // Trigger Celebration Modal if Level Up occurred!
       if (data.leveledUp) {
         setCelebrationData({
           levelsGained: data.levelsGained,
@@ -213,7 +231,6 @@ export function Dashboard() {
         setShowCelebration(true);
       }
 
-      // Streak celebration
       if (data.streakIncreased) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
       }
@@ -236,22 +253,77 @@ export function Dashboard() {
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Purchase failed');
-      }
+      if (!res.ok) throw new Error(data.message || 'Purchase failed');
 
-      // Update character coin balance & inventory
+      // Update coins & inventory
       setProfile((prev) => ({
         ...prev,
-        character: data.character,
-        inventory: [...(prev.inventory || []), data.inventory]
+        character: data.character
       }));
+      setInventory((prev) => [...prev, data.inventory]);
 
       addToast(`Adopted "${item.name}"! Coins remaining: ${data.character.cozy_coins}`, 'success');
     } catch (err) {
       addToast(err.message, 'error');
     } finally {
       setPurchasingId(null);
+    }
+  };
+
+  // 6. Equip / Unequip Item (with Optimistic UI and rollback)
+  const handleToggleEquip = async (inventoryId, targetEquipped) => {
+    setEquippingId(inventoryId);
+
+    // Save previous inventory for rollback
+    const previousInventory = [...inventory];
+    const targetItem = previousInventory.find((i) => i.id === inventoryId);
+    const category = targetItem?.item?.category;
+
+    // Optimistic UI update
+    setInventory((prev) =>
+      prev.map((inv) => {
+        if (inv.id === inventoryId) {
+          return { ...inv, equipped: targetEquipped };
+        }
+        // Auto-unequip other companions if equipping a companion
+        if (targetEquipped && category === 'companion' && inv.item?.category === 'companion') {
+          return { ...inv, equipped: false };
+        }
+        return inv;
+      })
+    );
+
+    try {
+      const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/equip`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ equipped: targetEquipped })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update equipment');
+
+      // Sync with server response
+      setInventory((prev) =>
+        prev.map((inv) => {
+          if (inv.id === inventoryId) return data.inventory;
+          if (targetEquipped && category === 'companion' && inv.item?.category === 'companion' && inv.id !== inventoryId) {
+            return { ...inv, equipped: false };
+          }
+          return inv;
+        })
+      );
+
+      addToast(data.message, 'success');
+    } catch (err) {
+      // Rollback optimistic update
+      setInventory(previousInventory);
+      addToast(err.message, 'error');
+    } finally {
+      setEquippingId(null);
     }
   };
 
@@ -276,11 +348,14 @@ export function Dashboard() {
     longest_streak: 0
   };
 
+  // Find all equipped badges across the whole app
+  const equippedBadges = inventory.filter((inv) => inv.equipped && inv.item?.category === 'badge');
+
   const xpPercent = Math.min(100, Math.round((char.current_xp / (char.xp_to_next_level || 100)) * 100));
 
   return (
     <div className="min-h-screen bg-cozy-cream text-cozy-brown-dark flex flex-col justify-between p-4 sm:p-8 font-sans selection:bg-cozy-terracotta-subtle">
-      {/* Keyboard Accessibility: Skip Link */}
+      {/* Skip to Content Link */}
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
@@ -288,7 +363,7 @@ export function Dashboard() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
-      {/* Level-Up Celebration Modal with Focus Trap */}
+      {/* Level-Up Celebration Modal */}
       <CelebrationModal
         isOpen={showCelebration}
         onClose={() => setShowCelebration(false)}
@@ -307,13 +382,27 @@ export function Dashboard() {
               ☕
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-pixel text-cozy-brown-dark tracking-wide">
                   Life RPG
                 </h1>
                 <span className="px-2 py-0.5 bg-cozy-sage-subtle text-cozy-sage-dark text-[11px] font-pixel rounded border border-cozy-sage-light">
                   LVL {char.level} Scholar
                 </span>
+
+                {/* Equipped Badges Displayed in Header Across the App */}
+                {equippedBadges.map((b) => (
+                  <motion.span
+                    key={b.id}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    title={`Equipped Badge: ${b.item?.name}`}
+                    className="px-2 py-0.5 bg-cozy-gold-light text-cozy-gold-dark text-[11px] font-pixel rounded border border-cozy-gold-base flex items-center gap-1 shadow-pixel-sm"
+                  >
+                    <span>{b.item?.name === 'Dawn Scholar Badge' ? '🌅' : '🌙'}</span>
+                    <span className="hidden sm:inline font-bold">{b.item?.name}</span>
+                  </motion.span>
+                ))}
               </div>
               <p className="text-xs text-cozy-brown-medium truncate max-w-[220px] sm:max-w-xs">
                 Scholar: <span className="font-semibold text-cozy-brown-dark">{user?.email}</span>
@@ -323,7 +412,7 @@ export function Dashboard() {
 
           {/* HUD Counters & Logout */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            {/* Coins with accessible label */}
+            {/* Coins */}
             <motion.div
               key={char.cozy_coins}
               animate={{ scale: [1, 1.1, 1] }}
@@ -337,7 +426,7 @@ export function Dashboard() {
               </span>
             </motion.div>
 
-            {/* Streak with accessible label */}
+            {/* Streak */}
             <motion.div
               key={streak.current_streak}
               animate={{ scale: [1, 1.1, 1] }}
@@ -351,11 +440,11 @@ export function Dashboard() {
               </span>
             </motion.div>
 
-            {/* Logout Button */}
+            {/* Logout */}
             <button
               type="button"
               onClick={handleLogout}
-              aria-label="Log out of your Life RPG session"
+              aria-label="Log out of Life RPG session"
               className="touch-target pixel-box-interactive bg-cozy-card hover:bg-cozy-terracotta-subtle hover:text-cozy-terracotta-dark text-cozy-brown-dark font-pixel text-xs sm:text-sm px-4 py-2 rounded-pixel font-semibold transition flex items-center gap-1.5 shadow-pixel-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark"
             >
               <span aria-hidden="true">🚪</span>
@@ -438,13 +527,13 @@ export function Dashboard() {
           </div>
         </section>
 
-        {/* View Switcher: Nav Element */}
+        {/* View Switcher: Nav Element with Quests, My Room, and Shop */}
         <nav aria-label="Study Haven Views" className="flex items-center gap-2 border-b-2 border-cozy-brown-dark pb-2 overflow-x-auto">
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'quests'}
-            onClick={() => setActiveTab('quests')}
+            onClick={() => handleTabSwitch('quests')}
             className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
               activeTab === 'quests'
                 ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
@@ -458,8 +547,23 @@ export function Dashboard() {
           <button
             type="button"
             role="tab"
+            aria-selected={activeTab === 'room'}
+            onClick={() => handleTabSwitch('room')}
+            className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
+              activeTab === 'room'
+                ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
+                : 'bg-cozy-parchment text-cozy-brown-medium hover:text-cozy-brown-dark'
+            }`}
+          >
+            <span aria-hidden="true">🛋️</span>
+            <span>My Room ({inventory.filter(i => i.equipped).length} Active)</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
             aria-selected={activeTab === 'shop'}
-            onClick={() => setActiveTab('shop')}
+            onClick={() => handleTabSwitch('shop')}
             className={`touch-target pixel-box px-4 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
               activeTab === 'shop'
                 ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark'
@@ -471,9 +575,9 @@ export function Dashboard() {
           </button>
         </nav>
 
-        {/* Main Content Area with Skip Link anchor */}
+        {/* Main Content Area */}
         <main id="main-content" tabIndex={-1} className="focus:outline-none">
-          {activeTab === 'quests' ? (
+          {activeTab === 'quests' && (
             <QuestList
               quests={quests}
               onComplete={handleCompleteQuest}
@@ -482,10 +586,21 @@ export function Dashboard() {
               onDelete={handleDeleteQuest}
               completingId={completingId}
             />
-          ) : (
+          )}
+
+          {activeTab === 'room' && (
+            <MyRoom
+              inventory={inventory}
+              onToggleEquip={handleToggleEquip}
+              equippingId={equippingId}
+              onNavigateToShop={() => handleTabSwitch('shop')}
+            />
+          )}
+
+          {activeTab === 'shop' && (
             <ShopCatalog
               items={items}
-              inventory={profile?.inventory || []}
+              inventory={inventory}
               userCoins={char.cozy_coins}
               onPurchase={handlePurchaseItem}
               purchasingId={purchasingId}
@@ -496,7 +611,7 @@ export function Dashboard() {
 
       {/* Footer */}
       <footer className="w-full max-w-4xl mx-auto text-center text-xs text-cozy-brown-medium border-t border-cozy-border pt-4 mt-8">
-        Life RPG • Accessible Study Sanctuary • Keyboard Navigable (Tab / Enter / Esc)
+        Life RPG • Personalized Study Room Scene • Real-Time Inventory &amp; Badge Display
       </footer>
     </div>
   );

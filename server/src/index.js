@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import characterRouter from './routes/character.js';
 import questsRouter from './routes/quests.js';
 import itemsRouter from './routes/items.js';
+import inventoryRouter from './routes/inventory.js';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +42,7 @@ app.get('/health', (req, res) => {
 app.use('/api', characterRouter);
 app.use('/api/quests', questsRouter);
 app.use('/api/items', itemsRouter);
+app.use('/api/inventory', inventoryRouter);
 
 // Root informational endpoint
 app.get('/', (req, res) => {
@@ -52,7 +54,8 @@ app.get('/', (req, res) => {
       health: '/health',
       me: '/api/me',
       quests: '/api/quests',
-      items: '/api/items'
+      items: '/api/items',
+      inventory: '/api/inventory'
     }
   });
 });
