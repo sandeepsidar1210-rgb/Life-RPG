@@ -27,6 +27,46 @@ export const CozyMat = ({
   />
 );
 
+/**
+ * WoodMat
+ * Warm wood material with subtle ambient warmth and low sheen.
+ */
+export const WoodMat = ({
+  color = '#5D4037',
+  roughness = 0.72,
+  metalness = 0.04,
+  emissive = '#1A0E06',
+  emissiveIntensity = 0.12,
+  ...props
+}) => (
+  <CozyMat
+    color={color}
+    roughness={roughness}
+    metalness={metalness}
+    emissive={emissive}
+    emissiveIntensity={emissiveIntensity}
+    {...props}
+  />
+);
+
+/**
+ * FabricMat
+ * Soft plush textile material with high roughness and velvety light response.
+ */
+export const FabricMat = ({
+  color = '#8B2635',
+  roughness = 0.9,
+  metalness = 0.02,
+  ...props
+}) => (
+  <CozyMat
+    color={color}
+    roughness={roughness}
+    metalness={metalness}
+    {...props}
+  />
+);
+
 // Shorthand for flat-shaded low-poly accents where crisp facets are desired
 export const FacetMat = ({
   color,
@@ -109,12 +149,6 @@ export function RoomBase() {
       <mesh position={[0, -0.2, 0]} receiveShadow>
         <boxGeometry args={[16.0, 0.4, 16.0]} />
         <CozyMat color="#D8C4AA" roughness={0.6} />
-      </mesh>
-
-      {/* Decorative floor border inlays */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[15.6, 15.6]} />
-        <meshBasicMaterial color="#BFA586" wireframe transparent opacity={0.25} />
       </mesh>
 
       {/* Outer dark walnut floor perimeter frame */}
@@ -220,71 +254,122 @@ export function RoomBase() {
       {/* --- Ambient Floating Sunbeam Dust Motes --- */}
       <FloatingDustMotes count={32} range={[12, 6.5, 12]} color="#FFF3C4" />
 
-      {/* --- Large Woven Terracotta Medallion Rug --- */}
-      <group position={[0.2, 0.015, 1.4]} receiveShadow>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <circleGeometry args={[2.8, 32]} />
-          <CozyMat color="#C87556" roughness={0.9} />
+      {/* --- Elegant Woven Rectangular Hearth Rug --- */}
+      <group position={[0.2, 0.005, 1.4]} receiveShadow>
+        {/* Outer Warm Terracotta Border */}
+        <mesh receiveShadow>
+          <boxGeometry args={[4.8, 0.01, 3.4]} />
+          <FabricMat color="#B85D3B" roughness={0.92} />
         </mesh>
-        <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[2.2, 32]} />
-          <CozyMat color="#F2E8D8" roughness={0.9} />
+        {/* Inner Cream Linen Field */}
+        <mesh position={[0, 0.005, 0]} receiveShadow>
+          <boxGeometry args={[4.2, 0.01, 2.8]} />
+          <FabricMat color="#EDE4D3" roughness={0.9} />
         </mesh>
-        <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[1.5, 32]} />
-          <CozyMat color="#D88A6E" roughness={0.9} />
-        </mesh>
-        <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.7, 32]} />
-          <CozyMat color="#78350F" roughness={0.9} />
+        {/* Subtle Warm Amber Center Accent */}
+        <mesh position={[0, 0.009, 0]} receiveShadow>
+          <boxGeometry args={[3.4, 0.005, 2.0]} />
+          <FabricMat color="#C97A56" roughness={0.92} />
         </mesh>
       </group>
 
-      {/* --- Base Large Executive Study Desk --- */}
+      {/* --- Base Large Executive Study Desk (Enhanced Model Fidelity) --- */}
       <group position={[0, 0, -0.6]}>
-        {/* Main Desktop (Wide & spacious: 4.8 x 2.2) */}
+        {/* Main Desktop with Beveled Layered Edge Trim */}
         <mesh position={[0, 1.35, 0]} castShadow receiveShadow>
           <boxGeometry args={[4.8, 0.16, 2.2]} />
-          <CozyMat color="#8F5E38" roughness={0.5} />
+          <CozyMat color="#8F5E38" roughness={0.48} />
         </mesh>
-        {/* Inlaid Leather Writing Pad */}
-        <mesh position={[-0.2, 1.44, 0.1]} receiveShadow>
+        {/* Upper Beveled Desktop Lip */}
+        <mesh position={[0, 1.42, 0]} receiveShadow>
+          <boxGeometry args={[4.88, 0.04, 2.28]} />
+          <CozyMat color="#9B663E" roughness={0.45} />
+        </mesh>
+        {/* Underside Apron Molding */}
+        <mesh position={[0, 1.25, 0]}>
+          <boxGeometry args={[4.68, 0.05, 2.08]} />
+          <CozyMat color="#6B4123" roughness={0.6} />
+        </mesh>
+        {/* Inlaid Leather Writing Pad with Stitched Border */}
+        <mesh position={[-0.2, 1.45, 0.1]} receiveShadow>
           <boxGeometry args={[2.6, 0.02, 1.4]} />
-          <CozyMat color="#3D2614" roughness={0.8} />
+          <CozyMat color="#2F1C0E" roughness={0.82} />
         </mesh>
-        {/* Gold Border Trim on Desk Edge */}
-        <mesh position={[0, 1.35, 1.11]}>
-          <boxGeometry args={[4.8, 0.04, 0.04]} />
-          <CozyMat color="#DFB659" metalness={0.6} roughness={0.3} />
+        <mesh position={[-0.2, 1.455, 0.1]} receiveShadow>
+          <boxGeometry args={[2.52, 0.005, 1.32]} />
+          <CozyMat color="#3D2614" roughness={0.78} />
         </mesh>
-        {/* 4 Sturdy Classical Legs */}
+        {/* Gold Filigree Inlay Border on Desk Perimeter */}
+        <mesh position={[0, 1.442, 1.12]}>
+          <boxGeometry args={[4.84, 0.015, 0.025]} />
+          <CozyMat color="#DFB659" metalness={0.7} roughness={0.25} />
+        </mesh>
+        <mesh position={[0, 1.442, -1.12]}>
+          <boxGeometry args={[4.84, 0.015, 0.025]} />
+          <CozyMat color="#DFB659" metalness={0.7} roughness={0.25} />
+        </mesh>
+        {/* 4 Turned Classical Legs with Brass Ferrule Cuffs */}
         {[
           [-2.2, 0.65, -0.95],
           [2.2, 0.65, -0.95],
           [-2.2, 0.65, 0.95],
           [2.2, 0.65, 0.95],
         ].map(([x, y, z], i) => (
-          <mesh key={i} position={[x, y, z]} castShadow receiveShadow>
-            <boxGeometry args={[0.22, 1.3, 0.22]} />
-            <CozyMat color="#59381E" />
-          </mesh>
+          <group key={i} position={[x, 0, z]}>
+            {/* Upper Leg Block */}
+            <mesh position={[0, 1.15, 0]} castShadow receiveShadow>
+              <boxGeometry args={[0.24, 0.22, 0.24]} />
+              <CozyMat color="#59381E" />
+            </mesh>
+            {/* Turned Shaft with Center Swell */}
+            <mesh position={[0, 0.68, 0]} castShadow>
+              <cylinderGeometry args={[0.1, 0.12, 0.72, 14]} />
+              <CozyMat color="#6B4224" roughness={0.52} />
+            </mesh>
+            <mesh position={[0, 0.68, 0]} castShadow>
+              <sphereGeometry args={[0.13, 12, 8]} />
+              <CozyMat color="#7E4E2C" roughness={0.5} />
+            </mesh>
+            {/* Lower Leg Post */}
+            <mesh position={[0, 0.22, 0]} castShadow>
+              <cylinderGeometry args={[0.09, 0.08, 0.28, 12]} />
+              <CozyMat color="#59381E" />
+            </mesh>
+            {/* Polished Brass Ferrule Foot */}
+            <mesh position={[0, 0.05, 0]} castShadow>
+              <cylinderGeometry args={[0.08, 0.09, 0.1, 14]} />
+              <CozyMat color="#D4AF37" metalness={0.8} roughness={0.2} />
+            </mesh>
+          </group>
         ))}
-        {/* Dual Pedestal Drawers (Right side) */}
+        {/* Dual Pedestal Drawers (Right side) with Raised Paneling */}
         <group position={[1.7, 0.8, 0]} castShadow receiveShadow>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[1.0, 0.95, 1.9]} />
             <CozyMat color="#764929" />
           </mesh>
-          {/* Drawer Knobs */}
+          {/* Raised Beveled Drawer Fronts */}
           {[-0.25, 0.25].map((dy, i) => (
-            <mesh key={i} position={[-0.52, dy, 0]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.04, 0.04, 0.08, 12]} />
-              <CozyMat color="#DFB659" metalness={0.7} roughness={0.25} />
-            </mesh>
+            <group key={i} position={[-0.51, dy, 0]}>
+              <mesh position={[0, 0, 0]} castShadow>
+                <boxGeometry args={[0.03, 0.38, 1.76]} />
+                <CozyMat color="#8F5A33" roughness={0.5} />
+              </mesh>
+              {/* Brass Rosette Backplate */}
+              <mesh position={[-0.018, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.07, 0.07, 0.015, 12]} />
+                <CozyMat color="#DFB659" metalness={0.75} roughness={0.25} />
+              </mesh>
+              {/* Teardrop Brass Pull Knob */}
+              <mesh position={[-0.04, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.035, 0.045, 0.06, 12]} />
+                <CozyMat color="#DFB659" metalness={0.8} roughness={0.2} />
+              </mesh>
+            </group>
           ))}
         </group>
         {/* Scholar's Stationery & Journal on Desk */}
-        <group position={[-0.3, 1.46, 0.2]} rotation={[0, 0.12, 0]} castShadow>
+        <group position={[-0.3, 1.47, 0.2]} rotation={[0, 0.12, 0]} castShadow>
           <mesh castShadow>
             <boxGeometry args={[0.65, 0.04, 0.85]} />
             <CozyMat color="#4E3320" />
@@ -323,11 +408,6 @@ export function ReadingNookBase() {
       <mesh position={[0, -0.2, 0]} receiveShadow>
         <boxGeometry args={[16.0, 0.4, 16.0]} />
         <CozyMat color="#3D2617" roughness={0.55} />
-      </mesh>
-      {/* Subtle floor plank seams */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[15.6, 15.6]} />
-        <meshBasicMaterial color="#27160A" wireframe transparent opacity={0.3} />
       </mesh>
 
       {/* --- Back Wall (Deep Forest Library Green, 16x7.5) --- */}
@@ -466,48 +546,102 @@ export function ReadingNookBase() {
         </mesh>
       </group>
 
-      {/* --- Plush Velvet Reading Armchair --- */}
+      {/* --- Plush Velvet Reading Armchair (Enhanced Model Fidelity) --- */}
       <group position={[-1.2, 0, 1.2]} rotation={[0, 0.45, 0]}>
-        {/* Seat Base */}
+        {/* Seat Base with Padded Apron */}
         <mesh position={[0, 0.65, 0]} castShadow receiveShadow>
           <boxGeometry args={[1.6, 0.42, 1.5]} />
-          <CozyMat color="#8B2635" roughness={0.8} />
+          <CozyMat color="#8B2635" roughness={0.78} />
         </mesh>
-        {/* Plush Cushion */}
+        {/* Rounded Crown Front Apron */}
+        <mesh position={[0, 0.65, 0.74]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.18, 0.18, 1.56, 16]} />
+          <CozyMat color="#7E202E" roughness={0.75} />
+        </mesh>
+        {/* Plush Overstuffed Cushion */}
         <mesh position={[0, 0.9, 0.06]} castShadow receiveShadow>
           <boxGeometry args={[1.4, 0.24, 1.3]} />
-          <CozyMat color="#9E2A3B" roughness={0.85} />
+          <CozyMat color="#9E2A3B" roughness={0.82} />
         </mesh>
-        {/* High Tufted Backrest */}
+        {/* High Winged Tufted Backrest */}
         <mesh position={[0, 1.6, -0.6]} rotation={[-0.1, 0, 0]} castShadow>
           <boxGeometry args={[1.5, 1.4, 0.35]} />
-          <CozyMat color="#8B2635" roughness={0.8} />
+          <CozyMat color="#8B2635" roughness={0.78} />
         </mesh>
-        {/* Armrests */}
-        <mesh position={[-0.8, 1.15, 0.02]} castShadow>
-          <boxGeometry args={[0.26, 0.55, 1.4]} />
-          <CozyMat color="#781D2B" />
-        </mesh>
-        <mesh position={[0.8, 1.15, 0.02]} castShadow>
-          <boxGeometry args={[0.26, 0.55, 1.4]} />
-          <CozyMat color="#781D2B" />
-        </mesh>
-        {/* 4 Turned Wooden Legs */}
+        {/* Tufted Button Indentations on Backrest */}
+        {[
+          [-0.4, 1.8, -0.42],
+          [0.0, 1.8, -0.42],
+          [0.4, 1.8, -0.42],
+          [-0.2, 1.5, -0.44],
+          [0.2, 1.5, -0.44],
+          [-0.4, 1.2, -0.46],
+          [0.0, 1.2, -0.46],
+          [0.4, 1.2, -0.46],
+        ].map(([bx, by, bz], bi) => (
+          <group key={bi} position={[bx, by, bz]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.04, 8, 6]} />
+              <CozyMat color="#5C1420" roughness={0.9} />
+            </mesh>
+          </group>
+        ))}
+        {/* Elegant Rolled Armrests (Curved Cylinder Rolls) */}
+        <group position={[-0.8, 1.15, 0.02]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.24, 0.48, 1.4]} />
+            <CozyMat color="#781D2B" />
+          </mesh>
+          {/* Top Rolled Scroll Cushion */}
+          <mesh position={[-0.04, 0.24, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.13, 0.13, 1.42, 16]} />
+            <CozyMat color="#8E2333" roughness={0.8} />
+          </mesh>
+          {/* Front Scroll Rosette */}
+          <mesh position={[-0.04, 0.24, 0.72]}>
+            <cylinderGeometry args={[0.13, 0.13, 0.04, 16]} />
+            <CozyMat color="#D4AF37" metalness={0.65} roughness={0.35} />
+          </mesh>
+        </group>
+        <group position={[0.8, 1.15, 0.02]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.24, 0.48, 1.4]} />
+            <CozyMat color="#781D2B" />
+          </mesh>
+          {/* Top Rolled Scroll Cushion */}
+          <mesh position={[0.04, 0.24, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.13, 0.13, 1.42, 16]} />
+            <CozyMat color="#8E2333" roughness={0.8} />
+          </mesh>
+          {/* Front Scroll Rosette */}
+          <mesh position={[0.04, 0.24, 0.72]}>
+            <cylinderGeometry args={[0.13, 0.13, 0.04, 16]} />
+            <CozyMat color="#D4AF37" metalness={0.65} roughness={0.35} />
+          </mesh>
+        </group>
+        {/* 4 Turned Dark Walnut Legs with Brass Casters */}
         {[
           [-0.68, 0.24, -0.58],
           [0.68, 0.24, -0.58],
           [-0.68, 0.24, 0.58],
           [0.68, 0.24, 0.58]
         ].map(([x, y, z], i) => (
-          <mesh key={i} position={[x, y, z]} castShadow>
-            <cylinderGeometry args={[0.07, 0.05, 0.48, 12]} />
-            <CozyMat color="#3D2111" />
-          </mesh>
+          <group key={i} position={[x, 0, z]}>
+            <mesh position={[0, 0.26, 0]} castShadow>
+              <cylinderGeometry args={[0.08, 0.05, 0.44, 12]} />
+              <CozyMat color="#3D2111" />
+            </mesh>
+            {/* Polished Brass Caster */}
+            <mesh position={[0, 0.05, 0]} castShadow>
+              <sphereGeometry args={[0.055, 10, 8]} />
+              <CozyMat color="#D4AF37" metalness={0.8} roughness={0.25} />
+            </mesh>
+          </group>
         ))}
-        {/* Cozy Throw Pillow */}
+        {/* Cozy Embroidered Throw Pillow */}
         <mesh position={[0.3, 1.1, -0.35]} rotation={[0.2, 0.35, 0.1]} castShadow>
           <boxGeometry args={[0.55, 0.48, 0.22]} />
-          <CozyMat color="#D4A373" roughness={0.9} />
+          <CozyMat color="#D4A373" roughness={0.88} />
         </mesh>
       </group>
 
@@ -555,11 +689,6 @@ export function GardenBalconyBase() {
       <mesh position={[0, -0.2, 0]} receiveShadow>
         <boxGeometry args={[16.0, 0.4, 16.0]} />
         <CozyMat color="#B85D3B" roughness={0.75} />
-      </mesh>
-      {/* Stone Tile Mortar Lines */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[15.6, 15.6]} />
-        <meshBasicMaterial color="#944528" wireframe transparent opacity={0.35} />
       </mesh>
 
       {/* --- Open Panoramic Vista (Rolling Green Hills & Bright Azure Sky) --- */}
@@ -722,30 +851,77 @@ export function GardenBalconyBase() {
 export function DeskLampModel() {
   return (
     <group position={[0, 0, 0]}>
-      <mesh position={[0, 0.04, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.25, 0.28, 0.08, 16]} />
-        <CozyMat color="#D4AF37" metalness={0.7} roughness={0.3} />
+      {/* Weighted Brass Base with Stepped Moulding & Felt Pad */}
+      <mesh position={[0, 0.02, 0]} receiveShadow>
+        <cylinderGeometry args={[0.29, 0.31, 0.04, 24]} />
+        <CozyMat color="#1E1E1E" roughness={0.9} />
       </mesh>
-      <mesh position={[0, 0.36, -0.05]} rotation={[-0.2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.04, 0.6, 10]} />
-        <CozyMat color="#B58F28" metalness={0.7} roughness={0.3} />
+      <mesh position={[0, 0.05, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.26, 0.29, 0.05, 24]} />
+        <CozyMat color="#D4AF37" metalness={0.75} roughness={0.25} />
       </mesh>
-      <mesh position={[0, 0.62, -0.1]} castShadow>
-        <sphereGeometry args={[0.06, 12, 12]} />
-        <CozyMat color="#D4AF37" metalness={0.8} roughness={0.2} />
+      <mesh position={[0, 0.08, 0]} castShadow>
+        <cylinderGeometry args={[0.16, 0.22, 0.03, 20]} />
+        <CozyMat color="#B58F28" metalness={0.8} roughness={0.2} />
       </mesh>
-      <mesh position={[0, 0.78, 0.1]} rotation={[0.6, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.04, 0.5, 10]} />
-        <CozyMat color="#B58F28" metalness={0.7} roughness={0.3} />
+      {/* Brass Toggle / Rocker Switch on Base */}
+      <mesh position={[0.12, 0.09, 0.1]} rotation={[0.2, 0.4, 0]} castShadow>
+        <boxGeometry args={[0.04, 0.04, 0.06]} />
+        <CozyMat color="#D4AF37" metalness={0.85} roughness={0.15} />
       </mesh>
-      <group position={[0, 0.9, 0.3]} rotation={[0.4, 0, 0]}>
-        <mesh rotation={[Math.PI, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.22, 0.1, 0.32, 16]} />
-          <CozyMat color="#D16E50" roughness={0.5} />
+
+      {/* Lower Pivot Knuckle Joint with Brass Butterfly Wing Nut */}
+      <group position={[0, 0.12, -0.02]}>
+        <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.055, 0.055, 0.08, 14]} />
+          <CozyMat color="#DFB659" metalness={0.8} roughness={0.2} />
         </mesh>
-        <mesh position={[0, -0.08, 0]}>
+        <mesh position={[0.05, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <boxGeometry args={[0.02, 0.08, 0.02]} />
+          <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Lower Tapered Arm Segment */}
+      <mesh position={[0, 0.38, -0.08]} rotation={[-0.22, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.032, 0.04, 0.54, 12]} />
+        <CozyMat color="#B58F28" metalness={0.75} roughness={0.28} />
+      </mesh>
+
+      {/* Mid-Joint Knuckle */}
+      <group position={[0, 0.65, -0.14]}>
+        <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.05, 0.05, 0.07, 14]} />
+          <CozyMat color="#DFB659" metalness={0.8} roughness={0.2} />
+        </mesh>
+        <mesh position={[-0.045, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <boxGeometry args={[0.018, 0.075, 0.018]} />
+          <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Upper Curved Neck Segment */}
+      <mesh position={[0, 0.82, 0.08]} rotation={[0.62, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.028, 0.035, 0.48, 12]} />
+        <CozyMat color="#B58F28" metalness={0.75} roughness={0.28} />
+      </mesh>
+
+      {/* Fluted Shade with Rolled Brass Rim & Warm Amber Reflector */}
+      <group position={[0, 0.94, 0.28]} rotation={[0.42, 0, 0]}>
+        {/* Main Baked Terracotta / Sage Shade */}
+        <mesh rotation={[Math.PI, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.24, 0.11, 0.34, 20]} />
+          <CozyMat color="#D16E50" roughness={0.45} />
+        </mesh>
+        {/* Polished Brass Lip Trim */}
+        <mesh position={[0, -0.16, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <torusGeometry args={[0.242, 0.016, 10, 24]} />
+          <CozyMat color="#DFB659" metalness={0.8} roughness={0.2} />
+        </mesh>
+        {/* Glowing Warm Filament Bulb */}
+        <mesh position={[0, -0.06, 0]}>
           <sphereGeometry args={[0.1, 16, 16]} />
-          <CozyMat color="#FFF7C2" emissive="#FFA000" emissiveIntensity={2.5} />
+          <CozyMat color="#FFF7C2" emissive="#FFA000" emissiveIntensity={2.8} />
         </mesh>
         <pointLight color="#FFA726" intensity={2.6} distance={7} castShadow shadow-bias={-0.001} />
       </group>
@@ -848,31 +1024,137 @@ export function PottedSucculentModel() {
 export function ZenBonsaiTreeModel() {
   return (
     <group position={[0, 0, 0]}>
+      {/* Glazed Ceramic Shallow Pot with Stepped Lip */}
       <mesh position={[0, 0.08, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.45, 0.4, 0.14, 20]} />
-        <CozyMat color="#263238" roughness={0.5} />
+        <cylinderGeometry args={[0.54, 0.46, 0.16, 24]} />
+        <CozyMat color="#1E293B" roughness={0.35} metalness={0.15} />
       </mesh>
-      <mesh position={[0, 0.14, 0]}>
-        <cylinderGeometry args={[0.42, 0.42, 0.04, 20]} />
-        <CozyMat color="#3E2723" />
+      {/* Glazed Pot Lip Trim */}
+      <mesh position={[0, 0.16, 0]} castShadow>
+        <torusGeometry args={[0.54, 0.025, 8, 24]} />
+        <CozyMat color="#334155" roughness={0.3} metalness={0.2} />
       </mesh>
-      {/* Gnarled Trunk */}
-      <mesh position={[0, 0.38, 0]} rotation={[0.15, 0.2, 0.1]} castShadow>
-        <cylinderGeometry args={[0.08, 0.14, 0.48, 10]} />
-        <CozyMat color="#5D4037" />
+      {/* 4 Ceramic Base Feet */}
+      {[
+        [-0.32, 0.015, -0.2],
+        [0.32, 0.015, -0.2],
+        [-0.32, 0.015, 0.2],
+        [0.32, 0.015, 0.2]
+      ].map(([fx, fy, fz], fi) => (
+        <mesh key={fi} position={[fx, fy, fz]} castShadow>
+          <boxGeometry args={[0.1, 0.04, 0.1]} />
+          <CozyMat color="#1E293B" roughness={0.4} />
+        </mesh>
+      ))}
+
+      {/* Rich Soil Bed */}
+      <mesh position={[0, 0.155, 0]}>
+        <cylinderGeometry args={[0.5, 0.5, 0.02, 24]} />
+        <CozyMat color="#2B1810" roughness={0.9} />
       </mesh>
-      <mesh position={[0.15, 0.65, 0.05]} rotation={[-0.3, 0.3, 0.4]} castShadow>
-        <cylinderGeometry args={[0.06, 0.08, 0.42, 10]} />
-        <CozyMat color="#5D4037" />
+
+      {/* Natural Velvet Moss Mounds */}
+      {[
+        [-0.22, 0.17, 0.1],
+        [-0.05, 0.175, 0.22],
+        [0.22, 0.168, -0.12],
+        [0.12, 0.172, 0.2],
+        [-0.2, 0.168, -0.18],
+      ].map(([mx, my, mz], mi) => (
+        <mesh key={mi} position={[mx, my, mz]} castShadow>
+          <sphereGeometry args={[0.12 + (mi % 3) * 0.03, 10, 8]} />
+          <CozyMat color={mi % 2 === 0 ? '#3B6B2B' : '#4E8538'} roughness={0.95} />
+        </mesh>
+      ))}
+
+      {/* Miniature Zen River Stone (Suiseki) */}
+      <mesh position={[0.26, 0.18, 0.12]} rotation={[0.2, 0.6, -0.1]} castShadow>
+        <sphereGeometry args={[0.08, 10, 8]} />
+        <CozyMat color="#64748B" roughness={0.6} />
       </mesh>
-      {/* Foliage Pads */}
-      <mesh position={[0.28, 0.85, 0.1]} castShadow>
-        <sphereGeometry args={[0.26, 10, 8]} />
-        <CozyMat color="#2E5A36" />
+
+      {/* Root Flare (Nebari) */}
+      <mesh position={[-0.08, 0.17, -0.04]} rotation={[0.4, 0.3, 0.6]} castShadow>
+        <cylinderGeometry args={[0.04, 0.08, 0.18, 8]} />
+        <WoodMat color="#4E342E" />
       </mesh>
-      <mesh position={[-0.18, 0.62, -0.08]} castShadow>
-        <sphereGeometry args={[0.2, 10, 8]} />
-        <CozyMat color="#386A40" />
+      <mesh position={[0.06, 0.165, 0.08]} rotation={[-0.3, 0.5, -0.5]} castShadow>
+        <cylinderGeometry args={[0.035, 0.07, 0.16, 8]} />
+        <WoodMat color="#4E342E" />
+      </mesh>
+
+      {/* Gnarled Weathered Bonsai Trunk (Multi-Segment Twisting Pine) */}
+      {/* Lower Trunk */}
+      <mesh position={[0, 0.32, 0]} rotation={[0.16, 0.2, 0.12]} castShadow>
+        <cylinderGeometry args={[0.1, 0.16, 0.32, 12]} />
+        <WoodMat color="#5D4037" roughness={0.8} />
+      </mesh>
+      {/* Mid Trunk Lean */}
+      <mesh position={[0.08, 0.56, 0.04]} rotation={[-0.24, 0.28, 0.38]} castShadow>
+        <cylinderGeometry args={[0.075, 0.1, 0.32, 10]} />
+        <WoodMat color="#5D4037" roughness={0.8} />
+      </mesh>
+      {/* Main Upper Right Limb */}
+      <mesh position={[0.24, 0.78, 0.08]} rotation={[-0.15, 0.1, 0.52]} castShadow>
+        <cylinderGeometry args={[0.05, 0.075, 0.34, 10]} />
+        <WoodMat color="#4E342E" roughness={0.8} />
+      </mesh>
+      {/* Counter-Balance Left Branch */}
+      <mesh position={[-0.06, 0.68, -0.04]} rotation={[0.22, -0.3, -0.65]} castShadow>
+        <cylinderGeometry args={[0.04, 0.06, 0.3, 8]} />
+        <WoodMat color="#4E342E" roughness={0.8} />
+      </mesh>
+      {/* Back Depth Limb */}
+      <mesh position={[0.04, 0.76, -0.12]} rotation={[-0.55, 0.1, 0.1]} castShadow>
+        <cylinderGeometry args={[0.035, 0.05, 0.24, 8]} />
+        <WoodMat color="#4E342E" roughness={0.8} />
+      </mesh>
+
+      {/* Layered Cloud Foliage Pads (Niwaki-Style Clustered Pine Tufts) */}
+      {/* Apex Crown Cloud */}
+      <group position={[0.38, 0.96, 0.12]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.26, 12, 10]} />
+          <CozyMat color="#244F2C" roughness={0.85} />
+        </mesh>
+        <mesh position={[-0.08, 0.06, 0.06]} castShadow>
+          <sphereGeometry args={[0.18, 10, 8]} />
+          <CozyMat color="#2E6137" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.08, -0.04, -0.04]} castShadow>
+          <sphereGeometry args={[0.16, 10, 8]} />
+          <CozyMat color="#1E4225" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* Mid Cascading Right Cloud */}
+      <group position={[0.54, 0.82, 0.18]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.2, 10, 8]} />
+          <CozyMat color="#2E6137" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.08, -0.04, 0.04]} castShadow>
+          <sphereGeometry args={[0.14, 8, 6]} />
+          <CozyMat color="#386A40" roughness={0.85} />
+        </mesh>
+      </group>
+
+      {/* Counter-Balance Left Cloud */}
+      <group position={[-0.24, 0.82, -0.08]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.22, 10, 8]} />
+          <CozyMat color="#2B5932" roughness={0.85} />
+        </mesh>
+        <mesh position={[-0.06, 0.04, 0.05]} castShadow>
+          <sphereGeometry args={[0.15, 8, 6]} />
+          <CozyMat color="#386A40" roughness={0.85} />
+        </mesh>
+      </group>
+
+      {/* Rear Depth Cloud */}
+      <mesh position={[0.02, 0.88, -0.22]} castShadow>
+        <sphereGeometry args={[0.18, 10, 8]} />
+        <CozyMat color="#1E4024" roughness={0.9} />
       </mesh>
     </group>
   );
@@ -884,36 +1166,134 @@ export function ZenBonsaiTreeModel() {
 export function OakBookshelfModel() {
   return (
     <group position={[0, 0, 0]}>
-      <mesh position={[0, 0.85, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.3, 1.7, 0.55]} />
-        <CozyMat color="#6D4C41" />
+      {/* Heavy Stepped Plinth Base */}
+      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.42, 0.2, 0.62]} />
+        <WoodMat color="#4E342E" roughness={0.7} />
       </mesh>
-      <mesh position={[0, 0.85, 0.06]}>
-        <boxGeometry args={[1.15, 1.5, 0.45]} />
-        <CozyMat color="#3E2723" />
+
+      {/* Main Upright Carcase */}
+      <mesh position={[0, 1.05, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.34, 1.8, 0.56]} />
+        <WoodMat color="#5D4037" roughness={0.72} />
       </mesh>
-      {/* Shelf Divider */}
-      <mesh position={[0, 0.85, 0.08]} castShadow receiveShadow>
-        <boxGeometry args={[1.15, 0.08, 0.48]} />
-        <CozyMat color="#5D4037" />
+
+      {/* Recessed Book Cavity Backing Panel */}
+      <mesh position={[0, 1.06, 0.05]}>
+        <boxGeometry args={[1.18, 1.62, 0.46]} />
+        <WoodMat color="#3E2723" roughness={0.85} />
       </mesh>
-      {/* Lower Row Books */}
-      <group position={[-0.45, 0.35, 0.12]}>
-        {['#8E2828', '#274C77', '#B8860B', '#2D6A4F', '#6B4226'].map((col, idx) => (
-          <mesh key={idx} position={[idx * 0.22, 0, 0]} castShadow>
-            <boxGeometry args={[0.18, 0.5, 0.32]} />
-            <CozyMat color={col} />
-          </mesh>
-        ))}
+
+      {/* Fluted Side Stile Accents */}
+      <mesh position={[-0.64, 1.05, 0.16]} castShadow>
+        <boxGeometry args={[0.07, 1.76, 0.24]} />
+        <WoodMat color="#4E342E" roughness={0.65} />
+      </mesh>
+      <mesh position={[0.64, 1.05, 0.16]} castShadow>
+        <boxGeometry args={[0.07, 1.76, 0.24]} />
+        <WoodMat color="#4E342E" roughness={0.65} />
+      </mesh>
+
+      {/* Crown Cornice Moulding Overhang */}
+      <mesh position={[0, 1.98, 0.02]} castShadow receiveShadow>
+        <boxGeometry args={[1.46, 0.12, 0.64]} />
+        <WoodMat color="#4E342E" roughness={0.65} />
+      </mesh>
+      <mesh position={[0, 1.92, 0.02]} castShadow>
+        <boxGeometry args={[1.38, 0.06, 0.58]} />
+        <WoodMat color="#5D4037" roughness={0.7} />
+      </mesh>
+
+      {/* Solid Oak Shelves (Lower & Upper) */}
+      <mesh position={[0, 0.72, 0.07]} castShadow receiveShadow>
+        <boxGeometry args={[1.18, 0.07, 0.5]} />
+        <WoodMat color="#5D4037" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 1.34, 0.07]} castShadow receiveShadow>
+        <boxGeometry args={[1.18, 0.07, 0.5]} />
+        <WoodMat color="#5D4037" roughness={0.7} />
+      </mesh>
+
+      {/* === LOWER SHELF: Heavy Study Folios & Classic Volumes === */}
+      <group position={[-0.48, 0.45, 0.12]}>
+        {[
+          { color: '#7F1D1D', w: 0.16, h: 0.46, d: 0.36, rib: true },
+          { color: '#1E3A8A', w: 0.18, h: 0.5, d: 0.38, rib: true },
+          { color: '#854D0E', w: 0.15, h: 0.44, d: 0.34, rib: false },
+          { color: '#065F46', w: 0.19, h: 0.48, d: 0.36, rib: true },
+          { color: '#3E2723', w: 0.22, h: 0.52, d: 0.4, rib: true },
+          { color: '#581C87', w: 0.16, h: 0.45, d: 0.35, rib: false }
+        ].map((book, idx) => {
+          let curX = idx * 0.19;
+          return (
+            <group key={idx} position={[curX, 0, 0]}>
+              <mesh castShadow>
+                <boxGeometry args={[book.w, book.h, book.d]} />
+                <CozyMat color={book.color} roughness={0.75} />
+              </mesh>
+              {/* Embossed Gold Spine Ribbon / Title */}
+              {book.rib && (
+                <mesh position={[0, 0.06, book.d / 2 + 0.005]}>
+                  <boxGeometry args={[book.w * 0.7, 0.06, 0.01]} />
+                  <CozyMat color="#D4AF37" metalness={0.7} roughness={0.3} />
+                </mesh>
+              )}
+            </group>
+          );
+        })}
       </group>
-      {/* Upper Row Books */}
-      <group position={[-0.42, 1.15, 0.12]}>
-        {['#1F2937', '#78290F', '#4A5568', '#C05621'].map((col, idx) => (
-          <mesh key={idx} position={[idx * 0.25, 0, 0]} castShadow>
-            <boxGeometry args={[0.2, 0.46, 0.32]} />
-            <CozyMat color={col} />
+
+      {/* === MIDDLE SHELF: Vintage Hardcovers + Crystal Artifact === */}
+      <group position={[-0.46, 1.03, 0.12]}>
+        {[
+          { color: '#1E293B', w: 0.14, h: 0.42, d: 0.32 },
+          { color: '#991B1B', w: 0.16, h: 0.45, d: 0.34 },
+          { color: '#15803D', w: 0.14, h: 0.4, d: 0.3 },
+          { color: '#B45309', w: 0.15, h: 0.43, d: 0.32 }
+        ].map((book, idx) => (
+          <mesh key={idx} position={[idx * 0.17, 0, 0]} castShadow>
+            <boxGeometry args={[book.w, book.h, book.d]} />
+            <CozyMat color={book.color} roughness={0.7} />
           </mesh>
         ))}
+
+        {/* Luminous Amethyst Geode Trinket on Middle Shelf */}
+        <group position={[0.78, -0.05, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.09, 0.12, 0.05, 12]} />
+            <CozyMat color="#334155" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.1, 0]} castShadow>
+            <octahedronGeometry args={[0.11]} />
+            <CozyMat color="#C084FC" emissive="#9333EA" emissiveIntensity={1.4} roughness={0.3} metalness={0.4} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* === UPPER SHELF: Scholarly Tomes with Leaning Book & Brass Bookend === */}
+      <group position={[-0.44, 1.62, 0.12]}>
+        {[
+          { color: '#312E81', w: 0.14, h: 0.42, d: 0.32 },
+          { color: '#701A75', w: 0.15, h: 0.44, d: 0.33 },
+          { color: '#14532D', w: 0.13, h: 0.38, d: 0.3 },
+        ].map((book, idx) => (
+          <mesh key={idx} position={[idx * 0.16, 0, 0]} castShadow>
+            <boxGeometry args={[book.w, book.h, book.d]} />
+            <CozyMat color={book.color} roughness={0.7} />
+          </mesh>
+        ))}
+        {/* Leaning Tome */}
+        <mesh position={[0.54, -0.02, 0]} rotation={[0, 0, -0.25]} castShadow>
+          <boxGeometry args={[0.13, 0.4, 0.32]} />
+          <CozyMat color="#C2410C" roughness={0.75} />
+        </mesh>
+        {/* Polished Brass Scroll Bookend */}
+        <group position={[0.76, -0.06, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.1, 0.16, 0.28]} />
+            <CozyMat color="#D4AF37" metalness={0.8} roughness={0.25} />
+          </mesh>
+        </group>
       </group>
     </group>
   );
@@ -1046,50 +1426,168 @@ export function GrandfatherClockModel() {
   useFrame(({ clock }) => {
     if (!pendulumRef.current) return;
     const t = clock.getElapsedTime();
-    pendulumRef.current.rotation.z = Math.sin(t * 3.14) * 0.2;
+    pendulumRef.current.rotation.z = Math.sin(t * 3.14) * 0.18;
   });
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Plinth Base */}
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.0, 0.6, 0.7]} />
-        <CozyMat color="#3D2111" />
+      {/* Plinth Base with Stepped Moulding */}
+      <mesh position={[0, 0.14, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.08, 0.28, 0.74]} />
+        <WoodMat color="#3D2111" roughness={0.65} />
       </mesh>
-      {/* Mid Trunk with Glass Door */}
-      <mesh position={[0, 1.6, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.8, 2.0, 0.6]} />
-        <CozyMat color="#4E2A15" />
+      <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.96, 0.22, 0.66]} />
+        <WoodMat color="#4E2A15" roughness={0.65} />
       </mesh>
-      <mesh position={[0, 1.6, 0.28]}>
-        <boxGeometry args={[0.5, 1.6, 0.05]} />
-        <CozyMat color="#93C5FD" transparent opacity={0.35} roughness={0.1} />
-      </mesh>
-      {/* Swinging Pendulum */}
-      <group ref={pendulumRef} position={[0, 2.3, 0.1]}>
-        <mesh position={[0, -0.6, 0]} castShadow>
-          <cylinderGeometry args={[0.015, 0.015, 1.1, 8]} />
-          <CozyMat color="#D4AF37" metalness={0.8} roughness={0.2} />
+      {/* 4 Carved Base Bracket Feet */}
+      {[
+        [-0.48, 0.05, -0.3],
+        [0.48, 0.05, -0.3],
+        [-0.48, 0.05, 0.3],
+        [0.48, 0.05, 0.3]
+      ].map(([bx, by, bz], bi) => (
+        <mesh key={bi} position={[bx, by, bz]} castShadow>
+          <boxGeometry args={[0.16, 0.1, 0.16]} />
+          <WoodMat color="#3D2111" roughness={0.7} />
         </mesh>
-        <mesh position={[0, -1.15, 0]} castShadow>
-          <cylinderGeometry args={[0.15, 0.15, 0.04, 16]} />
-          <CozyMat color="#D4AF37" metalness={0.85} roughness={0.2} />
+      ))}
+
+      {/* Mid Trunk Waist with Fluted Columns */}
+      <mesh position={[0, 1.55, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.82, 2.12, 0.58]} />
+        <WoodMat color="#4E2A15" roughness={0.7} />
+      </mesh>
+      {/* Side Column Pillars */}
+      <mesh position={[-0.38, 1.55, 0.26]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 2.05, 12]} />
+        <WoodMat color="#3D2111" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.38, 1.55, 0.26]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 2.05, 12]} />
+        <WoodMat color="#3D2111" roughness={0.6} />
+      </mesh>
+
+      {/* Beveled Brass-Framed Glass Door */}
+      <mesh position={[0, 1.55, 0.29]}>
+        <boxGeometry args={[0.56, 1.76, 0.04]} />
+        <CozyMat color="#D4AF37" metalness={0.75} roughness={0.25} />
+      </mesh>
+      <mesh position={[0, 1.55, 0.305]}>
+        <boxGeometry args={[0.48, 1.68, 0.01]} />
+        <CozyMat color="#93C5FD" transparent opacity={0.32} roughness={0.08} />
+      </mesh>
+
+      {/* Hanging Brass Chime Weights (Left & Right) */}
+      <mesh position={[-0.14, 1.75, 0.08]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.44, 14]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.14, 1.6, 0.08]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.44, 14]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+      </mesh>
+      {/* Weight Suspension Chains */}
+      <mesh position={[-0.14, 2.12, 0.08]}>
+        <cylinderGeometry args={[0.005, 0.005, 0.32, 6]} />
+        <CozyMat color="#D4AF37" metalness={0.8} />
+      </mesh>
+      <mesh position={[0.14, 2.05, 0.08]}>
+        <cylinderGeometry args={[0.005, 0.005, 0.46, 6]} />
+        <CozyMat color="#D4AF37" metalness={0.8} />
+      </mesh>
+
+      {/* Swinging Lyre Pendulum */}
+      <group ref={pendulumRef} position={[0, 2.3, 0.12]}>
+        {/* Brass Pendulum Rod */}
+        <mesh position={[0, -0.62, 0]} castShadow>
+          <cylinderGeometry args={[0.014, 0.014, 1.22, 8]} />
+          <CozyMat color="#DFB659" metalness={0.85} roughness={0.18} />
+        </mesh>
+        {/* Lyre Decorative Frame Accent */}
+        <mesh position={[0, -0.55, 0]}>
+          <torusGeometry args={[0.07, 0.01, 8, 16]} />
+          <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+        </mesh>
+        {/* Heavy Polished Disc Bob */}
+        <mesh position={[0, -1.24, 0]} castShadow>
+          <cylinderGeometry args={[0.16, 0.16, 0.04, 24]} />
+          <CozyMat color="#DFB659" metalness={0.9} roughness={0.15} />
         </mesh>
       </group>
-      {/* Upper Clock Hood & Face */}
-      <mesh position={[0, 2.9, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.0, 0.8, 0.7]} />
-        <CozyMat color="#3D2111" />
+
+      {/* Upper Clock Bonnet Hood & Cornice */}
+      <mesh position={[0, 2.92, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.04, 0.78, 0.72]} />
+        <WoodMat color="#4E2A15" roughness={0.65} />
       </mesh>
-      {/* Dial Face */}
-      <mesh position={[0, 2.9, 0.36]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.28, 0.28, 0.02, 24]} />
-        <CozyMat color="#FEF3C7" roughness={0.4} />
+
+      {/* Polished Brass Bezel Dial Surround */}
+      <mesh position={[0, 2.92, 0.36]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <torusGeometry args={[0.29, 0.025, 10, 32]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
       </mesh>
-      {/* Top Pediment & Finial */}
-      <mesh position={[0, 3.4, 0]} castShadow>
-        <coneGeometry args={[0.1, 0.25, 8]} />
-        <CozyMat color="#D4AF37" metalness={0.8} roughness={0.2} />
+
+      {/* Aged Porcelain Clock Face */}
+      <mesh position={[0, 2.92, 0.362]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.28, 0.28, 0.015, 32]} />
+        <CozyMat color="#FFFDF0" roughness={0.4} />
+      </mesh>
+
+      {/* Center Golden Sunburst Medallion */}
+      <mesh position={[0, 2.92, 0.375]}>
+        <sphereGeometry args={[0.045, 12, 10]} />
+        <CozyMat color="#D4AF37" metalness={0.85} roughness={0.2} />
+      </mesh>
+
+      {/* 12 Roman Numeral Hour Markers */}
+      {Array.from({ length: 12 }, (_, i) => {
+        const angle = (i * Math.PI) / 6;
+        const radius = 0.21;
+        const x = Math.sin(angle) * radius;
+        const y = Math.cos(angle) * radius;
+        return (
+          <mesh key={i} position={[x, 2.92 + y, 0.372]} rotation={[0, 0, -angle]}>
+            <boxGeometry args={[0.014, 0.038, 0.005]} />
+            <CozyMat color="#1E1E1E" roughness={0.8} />
+          </mesh>
+        );
+      })}
+
+      {/* Delicate Antique Clock Hands (Set at 10:10) */}
+      {/* Hour Hand (pointing toward ~10) */}
+      <mesh position={[-0.065, 2.96, 0.378]} rotation={[0, 0, 0.52]}>
+        <boxGeometry args={[0.015, 0.12, 0.006]} />
+        <CozyMat color="#2B1810" roughness={0.5} />
+      </mesh>
+      {/* Minute Hand (pointing toward ~2) */}
+      <mesh position={[0.08, 2.99, 0.38]} rotation={[0, 0, -0.52]}>
+        <boxGeometry args={[0.012, 0.17, 0.006]} />
+        <CozyMat color="#2B1810" roughness={0.5} />
+      </mesh>
+
+      {/* Ornate Swan-Neck Broken Pediment with 3 Polished Brass Finials */}
+      <mesh position={[0, 3.36, 0.05]} castShadow>
+        <boxGeometry args={[1.08, 0.1, 0.74]} />
+        <WoodMat color="#3D2111" roughness={0.65} />
+      </mesh>
+      {/* Center Brass Urn Finial */}
+      <mesh position={[0, 3.52, 0.05]} castShadow>
+        <coneGeometry args={[0.08, 0.22, 12]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 3.42, 0.05]} castShadow>
+        <sphereGeometry args={[0.05, 10, 8]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+      </mesh>
+      {/* Left & Right Corner Finials */}
+      <mesh position={[-0.48, 3.48, 0.05]} castShadow>
+        <coneGeometry args={[0.055, 0.15, 10]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.48, 3.48, 0.05]} castShadow>
+        <coneGeometry args={[0.055, 0.15, 10]} />
+        <CozyMat color="#DFB659" metalness={0.85} roughness={0.2} />
       </mesh>
     </group>
   );
@@ -1101,41 +1599,108 @@ export function GrandfatherClockModel() {
 export function ReadingArmchairModel() {
   return (
     <group position={[0, 0, 0]}>
-      <mesh position={[0, 0.55, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.4, 0.35, 1.3]} />
-        <CozyMat color="#8B2635" roughness={0.8} />
+      {/* Main Seat Base Frame */}
+      <mesh position={[0, 0.52, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.44, 0.32, 1.34]} />
+        <FabricMat color="#781D2B" roughness={0.9} />
       </mesh>
-      <mesh position={[0, 0.78, 0.05]} castShadow receiveShadow>
-        <boxGeometry args={[1.2, 0.2, 1.15]} />
-        <CozyMat color="#9E2A3B" roughness={0.85} />
+
+      {/* Plush Welted Seat Cushion */}
+      <mesh position={[0, 0.76, 0.04]} castShadow receiveShadow>
+        <boxGeometry args={[1.24, 0.22, 1.18]} />
+        <FabricMat color="#8E2333" roughness={0.88} />
       </mesh>
-      <mesh position={[0, 1.45, -0.52]} rotation={[-0.1, 0, 0]} castShadow>
-        <boxGeometry args={[1.3, 1.2, 0.3]} />
-        <CozyMat color="#8B2635" roughness={0.8} />
+
+      {/* Arched Chesterfield Wingback Backrest */}
+      <mesh position={[0, 1.5, -0.5]} rotation={[-0.1, 0, 0]} castShadow>
+        <boxGeometry args={[1.34, 1.3, 0.28]} />
+        <FabricMat color="#851F2F" roughness={0.9} />
       </mesh>
-      <mesh position={[-0.72, 1.0, 0.02]} castShadow>
-        <boxGeometry args={[0.22, 0.48, 1.2]} />
-        <CozyMat color="#781D2B" />
+      {/* Wingback Side Wings */}
+      <mesh position={[-0.64, 1.55, -0.28]} rotation={[-0.08, 0.25, 0]} castShadow>
+        <boxGeometry args={[0.16, 1.1, 0.44]} />
+        <FabricMat color="#781D2B" roughness={0.9} />
       </mesh>
-      <mesh position={[0.72, 1.0, 0.02]} castShadow>
-        <boxGeometry args={[0.22, 0.48, 1.2]} />
-        <CozyMat color="#781D2B" />
+      <mesh position={[0.64, 1.55, -0.28]} rotation={[-0.08, -0.25, 0]} castShadow>
+        <boxGeometry args={[0.16, 1.1, 0.44]} />
+        <FabricMat color="#781D2B" roughness={0.9} />
       </mesh>
-      {/* 4 Wooden Turned Legs */}
+
+      {/* Tufted Button Indentations on Backrest */}
       {[
-        [-0.6, 0.2, -0.5],
-        [0.6, 0.2, -0.5],
-        [-0.6, 0.2, 0.5],
-        [0.6, 0.2, 0.5]
-      ].map(([x, y, z], i) => (
-        <mesh key={i} position={[x, y, z]} castShadow>
-          <cylinderGeometry args={[0.06, 0.04, 0.4, 10]} />
-          <CozyMat color="#3D2111" />
+        [-0.4, 1.84, -0.44],
+        [0.0, 1.84, -0.44],
+        [0.4, 1.84, -0.44],
+        [-0.2, 1.54, -0.47],
+        [0.2, 1.54, -0.47],
+        [-0.4, 1.24, -0.5],
+        [0.0, 1.24, -0.5],
+        [0.4, 1.24, -0.5],
+      ].map(([bx, by, bz], bi) => (
+        <mesh key={bi} position={[bx, by, bz]} castShadow>
+          <sphereGeometry args={[0.04, 8, 6]} />
+          <FabricMat color="#50121C" roughness={0.95} />
         </mesh>
       ))}
-      <mesh position={[0.25, 0.95, -0.3]} rotation={[0.2, 0.3, 0.1]} castShadow>
-        <boxGeometry args={[0.48, 0.42, 0.18]} />
-        <CozyMat color="#D4A373" roughness={0.9} />
+
+      {/* Elegant Rolled Armrests with Front Rosettes */}
+      <group position={[-0.78, 1.08, 0.02]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.22, 0.44, 1.32]} />
+          <FabricMat color="#781D2B" roughness={0.9} />
+        </mesh>
+        {/* Rolled Cylinder Top */}
+        <mesh position={[-0.03, 0.22, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.12, 1.34, 16]} />
+          <FabricMat color="#8E2333" roughness={0.88} />
+        </mesh>
+        {/* Front Brass Rosette Stud */}
+        <mesh position={[-0.03, 0.22, 0.68]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.03, 16]} />
+          <CozyMat color="#D4AF37" metalness={0.7} roughness={0.3} />
+        </mesh>
+      </group>
+
+      <group position={[0.78, 1.08, 0.02]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.22, 0.44, 1.32]} />
+          <FabricMat color="#781D2B" roughness={0.9} />
+        </mesh>
+        {/* Rolled Cylinder Top */}
+        <mesh position={[0.03, 0.22, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.12, 1.34, 16]} />
+          <FabricMat color="#8E2333" roughness={0.88} />
+        </mesh>
+        {/* Front Brass Rosette Stud */}
+        <mesh position={[0.03, 0.22, 0.68]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.03, 16]} />
+          <CozyMat color="#D4AF37" metalness={0.7} roughness={0.3} />
+        </mesh>
+      </group>
+
+      {/* 4 Turned Dark Walnut Legs with Brass Casters */}
+      {[
+        [-0.64, 0, -0.54],
+        [0.64, 0, -0.54],
+        [-0.64, 0, 0.54],
+        [0.64, 0, 0.54]
+      ].map(([x, y, z], i) => (
+        <group key={i} position={[x, y, z]}>
+          <mesh position={[0, 0.22, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.045, 0.38, 12]} />
+            <WoodMat color="#3D2111" roughness={0.65} />
+          </mesh>
+          <mesh position={[0, 0.04, 0]} castShadow>
+            <sphereGeometry args={[0.045, 10, 8]} />
+            <CozyMat color="#D4AF37" metalness={0.85} roughness={0.2} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Cozy Embroidered Throw Pillow */}
+      <mesh position={[0.28, 1.02, -0.32]} rotation={[0.18, 0.32, 0.1]} castShadow>
+        <boxGeometry args={[0.5, 0.44, 0.2]} />
+        <FabricMat color="#D4A373" roughness={0.92} />
       </mesh>
     </group>
   );

@@ -16,233 +16,665 @@ const FlatMat = ({ color, roughness = 0.7, metalness = 0.1, emissive, emissiveIn
 );
 
 // ==============================================================================
-// 1. EMBERWISP (Focus Spirit)
+// 1. EMBERWISP (Focus Spirit - Enhanced 3D Fidelity)
 // ==============================================================================
 
-// Stage 1: Emberwisp Spark
+// Stage 1: Emberwisp Spark — Tiny flickering flame wisp with orbiting embers
 export function EmberwispSpark() {
   const groupRef = useRef();
-  const spark1Ref = useRef();
-  const spark2Ref = useRef();
+  const auraRef = useRef();
+  const hazeRef = useRef();
+  const sparkRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
+  const trailRefs = [useRef(), useRef(), useRef()];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    // Smooth eased bobbing (cubic ease-in-out feel)
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(t * 3) * 0.08;
-      groupRef.current.rotation.y = t * 0.8;
+      const raw = Math.sin(t * 2.8);
+      const eased = raw * raw * raw * 0.3 + raw * 0.7;
+      groupRef.current.position.y = eased * 0.1;
+      groupRef.current.rotation.y = t * 0.7;
     }
-    if (spark1Ref.current) {
-      spark1Ref.current.position.x = Math.sin(t * 4) * 0.28;
-      spark1Ref.current.position.z = Math.cos(t * 4) * 0.28;
-      spark1Ref.current.position.y = 0.2 + Math.sin(t * 6) * 0.08;
+    // Pulsing aura
+    if (auraRef.current) {
+      const pulse = 1 + Math.sin(t * 3.8) * 0.1;
+      auraRef.current.scale.set(pulse, pulse * 1.08, pulse);
     }
-    if (spark2Ref.current) {
-      spark2Ref.current.position.x = Math.sin(t * 3.5 + Math.PI) * 0.22;
-      spark2Ref.current.position.z = Math.cos(t * 3.5 + Math.PI) * 0.22;
-      spark2Ref.current.position.y = 0.1 + Math.cos(t * 5) * 0.06;
+    // Outer heat-haze ring
+    if (hazeRef.current) {
+      hazeRef.current.rotation.z = t * 0.5;
+      const hazePulse = 1 + Math.sin(t * 2.2) * 0.15;
+      hazeRef.current.scale.set(hazePulse, hazePulse, hazePulse);
     }
+    // 5 orbiting ember sparks
+    sparkRefs.forEach((ref, i) => {
+      if (!ref.current) return;
+      const angle = t * (3.0 + i * 0.4) + (i * Math.PI * 2) / 5;
+      const radius = 0.28 + i * 0.04;
+      ref.current.position.x = Math.sin(angle) * radius;
+      ref.current.position.z = Math.cos(angle) * radius;
+      ref.current.position.y = 0.2 + Math.sin(t * (4 + i * 0.6) + i) * 0.12;
+    });
+    // Upward drifting trail embers
+    trailRefs.forEach((ref, i) => {
+      if (!ref.current) return;
+      const phase = (t * 0.8 + i * 1.2) % 2.5;
+      ref.current.position.y = 0.5 + phase * 0.35;
+      ref.current.position.x = Math.sin(t * 1.5 + i * 2) * 0.08;
+      const fade = Math.max(0, 1 - phase / 2.5);
+      ref.current.scale.setScalar(fade * 0.8 + 0.2);
+      if (ref.current.material) ref.current.material.opacity = fade * 0.7;
+    });
   });
 
   return (
     <group ref={groupRef}>
-      {/* Central Flame Core */}
+      {/* Outer Heat-Haze Distortion Ring */}
+      <group ref={hazeRef} position={[0, 0.24, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.38, 0.025, 8, 20]} />
+          <FlatMat color="#FF8A65" emissive="#FF5722" emissiveIntensity={0.8} transparent opacity={0.2} />
+        </mesh>
+      </group>
+      {/* Soft Outer Flame Aura */}
+      <mesh ref={auraRef} position={[0, 0.24, 0]}>
+        <sphereGeometry args={[0.28, 16, 14]} />
+        <FlatMat color="#FF7043" emissive="#F4511E" emissiveIntensity={1.4} transparent opacity={0.3} />
+      </mesh>
+      {/* Central Vibrant Flame Core — layered for depth */}
       <mesh position={[0, 0.2, 0]}>
-        <sphereGeometry args={[0.2, 12, 10]} />
-        <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={1.8} />
+        <sphereGeometry args={[0.2, 16, 14]} />
+        <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.2} />
       </mesh>
       {/* Inner White-Hot Nucleus */}
-      <mesh position={[0, 0.2, 0]}>
-        <sphereGeometry args={[0.11, 10, 8]} />
-        <FlatMat color="#FFFDE7" emissive="#FFF59D" emissiveIntensity={3} />
+      <mesh position={[0, 0.22, 0]}>
+        <sphereGeometry args={[0.12, 12, 10]} />
+        <FlatMat color="#FFFDE7" emissive="#FFF59D" emissiveIntensity={3.8} />
       </mesh>
-      {/* Flame Tip Teardrop */}
-      <mesh position={[0, 0.36, 0]}>
-        <coneGeometry args={[0.13, 0.25, 8]} />
-        <FlatMat color="#FB8C00" emissive="#F57C00" emissiveIntensity={1.5} />
+      {/* Flame Tip Teardrop Crown with bevel */}
+      <mesh position={[0, 0.4, 0]}>
+        <coneGeometry args={[0.14, 0.3, 12]} />
+        <FlatMat color="#FB8C00" emissive="#F57C00" emissiveIntensity={2.0} />
+      </mesh>
+      <mesh position={[0, 0.42, 0]}>
+        <coneGeometry args={[0.08, 0.15, 10]} />
+        <FlatMat color="#FFF9C4" emissive="#FFD54F" emissiveIntensity={3.0} />
+      </mesh>
+      {/* Curved Flame Winglets — left & right */}
+      <mesh position={[-0.2, 0.24, 0]} rotation={[0, 0, Math.PI / 5]}>
+        <coneGeometry args={[0.07, 0.24, 8]} />
+        <FlatMat color="#FF7043" emissive="#FF5722" emissiveIntensity={1.8} transparent opacity={0.75} />
+      </mesh>
+      <mesh position={[0.2, 0.24, 0]} rotation={[0, 0, -Math.PI / 5]}>
+        <coneGeometry args={[0.07, 0.24, 8]} />
+        <FlatMat color="#FF7043" emissive="#FF5722" emissiveIntensity={1.8} transparent opacity={0.75} />
       </mesh>
       {/* Friendly Glowing Eyes */}
-      <mesh position={[-0.06, 0.22, 0.16]}>
-        <sphereGeometry args={[0.035, 8, 6]} />
-        <FlatMat color="#3E2723" />
+      <mesh position={[-0.065, 0.22, 0.18]}>
+        <sphereGeometry args={[0.038, 10, 8]} />
+        <FlatMat color="#2B1608" />
       </mesh>
-      <mesh position={[0.06, 0.22, 0.16]}>
-        <sphereGeometry args={[0.035, 8, 6]} />
-        <FlatMat color="#3E2723" />
+      <mesh position={[0.065, 0.22, 0.18]}>
+        <sphereGeometry args={[0.038, 10, 8]} />
+        <FlatMat color="#2B1608" />
       </mesh>
-      {/* Orbiting Ember Sparks */}
-      <mesh ref={spark1Ref}>
-        <sphereGeometry args={[0.035, 6, 6]} />
-        <FlatMat color="#FFE082" emissive="#FFD54F" emissiveIntensity={2.5} />
+      {/* Eye glint highlights */}
+      <mesh position={[-0.058, 0.235, 0.2]}>
+        <sphereGeometry args={[0.012, 6, 6]} />
+        <FlatMat color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} />
       </mesh>
-      <mesh ref={spark2Ref}>
-        <boxGeometry args={[0.04, 0.04, 0.04]} />
-        <FlatMat color="#FFB74D" emissive="#FFA726" emissiveIntensity={2} />
+      <mesh position={[0.058, 0.235, 0.2]}>
+        <sphereGeometry args={[0.012, 6, 6]} />
+        <FlatMat color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} />
       </mesh>
-      <pointLight color="#FF9800" intensity={1.2} distance={4} />
+      {/* 5 Orbiting Ember Sparks */}
+      {sparkRefs.map((ref, i) => (
+        <mesh key={`spark-${i}`} ref={ref}>
+          {i % 2 === 0
+            ? <sphereGeometry args={[0.032 + i * 0.004, 8, 6]} />
+            : <octahedronGeometry args={[0.035 + i * 0.003]} />
+          }
+          <FlatMat
+            color={i % 2 === 0 ? '#FFE082' : '#FFB74D'}
+            emissive={i % 2 === 0 ? '#FFD54F' : '#FFA726'}
+            emissiveIntensity={2.5 + i * 0.3}
+          />
+        </mesh>
+      ))}
+      {/* Upward Drifting Trail Embers */}
+      {trailRefs.map((ref, i) => (
+        <mesh key={`trail-${i}`} ref={ref} position={[0, 0.5, 0]}>
+          <sphereGeometry args={[0.02, 6, 6]} />
+          <meshBasicMaterial color="#FFCC80" transparent opacity={0.6} />
+        </mesh>
+      ))}
+      <pointLight color="#FF9800" intensity={1.8} distance={5.5} />
     </group>
   );
 }
 
-// Stage 2: Emberwisp Lantern
+// Stage 2: Emberwisp Lantern (Intricate Pagoda Brass Filigree + Inner Flame Effects)
 export function EmberwispLantern() {
   const groupRef = useRef();
   const wingLRef = useRef();
   const wingRRef = useRef();
   const flameRef = useRef();
+  const emberRingRef = useRef();
+  const innerParticleRefs = [useRef(), useRef(), useRef(), useRef()];
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    // Smooth eased bob
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(t * 2.5) * 0.1;
-      groupRef.current.rotation.y = Math.sin(t * 0.6) * 0.4;
+      const raw = Math.sin(t * 2.2);
+      const eased = raw * raw * raw * 0.25 + raw * 0.75;
+      groupRef.current.position.y = eased * 0.12;
+      groupRef.current.rotation.y = Math.sin(t * 0.55) * 0.38;
     }
-    if (wingLRef.current) wingLRef.current.rotation.z = -0.3 + Math.sin(t * 5) * 0.25;
-    if (wingRRef.current) wingRRef.current.rotation.z = 0.3 - Math.sin(t * 5) * 0.25;
+    // Wing flap with secondary oscillation
+    if (wingLRef.current) {
+      wingLRef.current.rotation.z = -0.3 + Math.sin(t * 5.0) * 0.28 + Math.sin(t * 8.5) * 0.08;
+    }
+    if (wingRRef.current) {
+      wingRRef.current.rotation.z = 0.3 - Math.sin(t * 5.0) * 0.28 - Math.sin(t * 8.5) * 0.08;
+    }
+    // Inner flame core pulse
     if (flameRef.current) {
-      const pulse = 1 + Math.sin(t * 4) * 0.1;
-      flameRef.current.scale.set(pulse, pulse * 1.1, pulse);
+      const pulse = 1 + Math.sin(t * 4.5) * 0.12;
+      flameRef.current.scale.set(pulse, pulse * 1.15, pulse);
     }
+    // Rotating ember ring around lantern body
+    if (emberRingRef.current) {
+      emberRingRef.current.rotation.y = t * 2.4;
+      emberRingRef.current.rotation.x = Math.sin(t * 0.8) * 0.2;
+    }
+    // Inner flicker particles
+    innerParticleRefs.forEach((ref, i) => {
+      if (!ref.current) return;
+      const angle = t * (3.5 + i * 0.8) + (i * Math.PI) / 2;
+      const r = 0.1 + Math.sin(t * 2 + i) * 0.04;
+      ref.current.position.x = Math.sin(angle) * r;
+      ref.current.position.z = Math.cos(angle) * r;
+      ref.current.position.y = 0.34 + Math.sin(t * (5 + i)) * 0.06;
+    });
   });
 
   return (
     <group ref={groupRef}>
-      {/* Brass Hexagonal Lantern Frame */}
-      <mesh position={[0, 0.3, 0]}>
-        <cylinderGeometry args={[0.22, 0.25, 0.48, 6, 1, true]} />
-        <FlatMat color="#D4AF37" metalness={0.7} roughness={0.3} />
+      {/* Tiered Hexagonal Pagoda Roof with Swept Eaves */}
+      <group position={[0, 0.64, 0]}>
+        <mesh position={[0, 0.04, 0]} castShadow>
+          <cylinderGeometry args={[0.08, 0.32, 0.14, 6]} />
+          <FlatMat color="#D4AF37" metalness={0.75} roughness={0.25} />
+        </mesh>
+        <mesh position={[0, 0.14, 0]} castShadow>
+          <cylinderGeometry args={[0.04, 0.14, 0.1, 6]} />
+          <FlatMat color="#B58F28" metalness={0.8} roughness={0.2} />
+        </mesh>
+        {/* Upturned Eave Finials */}
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const angle = (i * Math.PI) / 3;
+          return (
+            <mesh
+              key={i}
+              position={[Math.cos(angle) * 0.34, 0.08, Math.sin(angle) * 0.34]}
+              rotation={[0, -angle, 0.5]}
+              castShadow
+            >
+              <coneGeometry args={[0.03, 0.12, 5]} />
+              <FlatMat color="#DFB659" metalness={0.85} roughness={0.2} />
+            </mesh>
+          );
+        })}
+        {/* Top Brass Suspension Ring */}
+        <mesh position={[0, 0.24, 0]}>
+          <torusGeometry args={[0.08, 0.022, 10, 18]} />
+          <FlatMat color="#DFB659" metalness={0.8} />
+        </mesh>
+      </group>
+
+      {/* 6 Slender Brass Filigree Vertical Posts */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const angle = (i * Math.PI) / 3;
+        return (
+          <mesh
+            key={`post-${i}`}
+            position={[Math.cos(angle) * 0.24, 0.34, Math.sin(angle) * 0.24]}
+            castShadow
+          >
+            <cylinderGeometry args={[0.02, 0.02, 0.52, 8]} />
+            <FlatMat color="#D4AF37" metalness={0.8} roughness={0.2} />
+          </mesh>
+        );
+      })}
+
+      {/* Filigree Horizontal Cross-Braces Between Posts */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const angle1 = (i * Math.PI) / 3;
+        const angle2 = ((i + 1) * Math.PI) / 3;
+        const x1 = Math.cos(angle1) * 0.24;
+        const z1 = Math.sin(angle1) * 0.24;
+        const x2 = Math.cos(angle2) * 0.24;
+        const z2 = Math.sin(angle2) * 0.24;
+        const midX = (x1 + x2) / 2;
+        const midZ = (z1 + z2) / 2;
+        const dx = x2 - x1;
+        const dz = z2 - z1;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        const rotY = Math.atan2(dx, dz);
+        return (
+          <group key={`brace-${i}`}>
+            {/* Upper brace */}
+            <mesh position={[midX, 0.50, midZ]} rotation={[0, rotY, 0]}>
+              <boxGeometry args={[0.015, 0.015, len]} />
+              <FlatMat color="#C9A030" metalness={0.75} roughness={0.25} />
+            </mesh>
+            {/* Lower brace */}
+            <mesh position={[midX, 0.18, midZ]} rotation={[0, rotY, 0]}>
+              <boxGeometry args={[0.015, 0.015, len]} />
+              <FlatMat color="#C9A030" metalness={0.75} roughness={0.25} />
+            </mesh>
+            {/* Decorative diagonal */}
+            <mesh position={[midX, 0.34, midZ]} rotation={[0, rotY, Math.PI / 4]}>
+              <boxGeometry args={[0.01, 0.28, 0.01]} />
+              <FlatMat color="#B58F28" metalness={0.7} roughness={0.3} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Hexagonal Moulded Plinth Base */}
+      <mesh position={[0, 0.05, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.26, 0.3, 0.09, 6]} />
+        <FlatMat color="#B58F28" metalness={0.75} roughness={0.25} />
       </mesh>
-      {/* Lantern Cap and Base */}
-      <mesh position={[0, 0.58, 0]}>
-        <coneGeometry args={[0.28, 0.18, 6]} />
-        <FlatMat color="#B58F28" metalness={0.7} roughness={0.3} />
+      <mesh position={[0, 0.01, 0]} receiveShadow>
+        <cylinderGeometry args={[0.3, 0.32, 0.04, 6]} />
+        <FlatMat color="#8C6D1F" metalness={0.7} />
       </mesh>
-      <mesh position={[0, 0.04, 0]}>
-        <cylinderGeometry args={[0.26, 0.28, 0.08, 6]} />
-        <FlatMat color="#B58F28" metalness={0.7} roughness={0.3} />
+      {/* Decorative base torus ring */}
+      <mesh position={[0, 0.10, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.27, 0.012, 8, 12]} />
+        <FlatMat color="#DFB659" metalness={0.85} roughness={0.15} />
       </mesh>
-      {/* Lantern Ring Top */}
-      <mesh position={[0, 0.72, 0]}>
-        <torusGeometry args={[0.07, 0.02, 8, 16]} />
-        <FlatMat color="#D4AF37" metalness={0.8} />
-      </mesh>
-      {/* Inner Glowing Spirit Core */}
-      <group ref={flameRef} position={[0, 0.3, 0]}>
+
+      {/* Inner Living Spirit Flame Core */}
+      <group ref={flameRef} position={[0, 0.34, 0]}>
+        {/* Main flame */}
         <mesh>
-          <sphereGeometry args={[0.14, 12, 10]} />
-          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.5} />
+          <sphereGeometry args={[0.16, 16, 14]} />
+          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={3.0} />
         </mesh>
-        <mesh position={[0, 0.11, 0]}>
-          <coneGeometry args={[0.09, 0.18, 8]} />
-          <FlatMat color="#FFF7C2" emissive="#FFEB3B" emissiveIntensity={3} />
+        {/* Inner hot nucleus */}
+        <mesh>
+          <sphereGeometry args={[0.09, 12, 10]} />
+          <FlatMat color="#FFFDE7" emissive="#FFF59D" emissiveIntensity={4.0} />
         </mesh>
-        {/* Bright Eyes inside Lantern */}
-        <mesh position={[-0.05, 0.02, 0.12]}>
-          <sphereGeometry args={[0.025, 8, 6]} />
-          <FlatMat color="#3E2723" />
+        {/* Flame tip */}
+        <mesh position={[0, 0.14, 0]}>
+          <coneGeometry args={[0.1, 0.22, 12]} />
+          <FlatMat color="#FFF7C2" emissive="#FFEB3B" emissiveIntensity={3.8} />
         </mesh>
-        <mesh position={[0.05, 0.02, 0.12]}>
-          <sphereGeometry args={[0.025, 8, 6]} />
-          <FlatMat color="#3E2723" />
+        {/* Bright Joyful Eyes */}
+        <mesh position={[-0.058, 0.03, 0.14]}>
+          <sphereGeometry args={[0.03, 10, 8]} />
+          <FlatMat color="#2B1608" />
+        </mesh>
+        <mesh position={[0.058, 0.03, 0.14]}>
+          <sphereGeometry args={[0.03, 10, 8]} />
+          <FlatMat color="#2B1608" />
+        </mesh>
+        {/* Eye glints */}
+        <mesh position={[-0.05, 0.042, 0.16]}>
+          <sphereGeometry args={[0.01, 6, 6]} />
+          <FlatMat color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} />
+        </mesh>
+        <mesh position={[0.05, 0.042, 0.16]}>
+          <sphereGeometry args={[0.01, 6, 6]} />
+          <FlatMat color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} />
         </mesh>
       </group>
-      {/* Flame Winglets */}
-      <group ref={wingLRef} position={[-0.24, 0.35, 0]}>
-        <mesh rotation={[0, 0, Math.PI / 4]}>
-          <coneGeometry args={[0.09, 0.32, 6]} />
-          <FlatMat color="#FF7043" emissive="#F4511E" emissiveIntensity={2} transparent opacity={0.85} />
+
+      {/* Inner Flicker Particles inside cage */}
+      {innerParticleRefs.map((ref, i) => (
+        <mesh key={`flicker-${i}`} ref={ref} position={[0, 0.34, 0]}>
+          <sphereGeometry args={[0.018 + i * 0.003, 6, 6]} />
+          <FlatMat
+            color={i % 2 === 0 ? '#FFE082' : '#FFCC80'}
+            emissive={i % 2 === 0 ? '#FFD54F' : '#FFB74D'}
+            emissiveIntensity={3}
+            transparent
+            opacity={0.7}
+          />
+        </mesh>
+      ))}
+
+      {/* Rotating Ember Ring orbiting lantern */}
+      <group ref={emberRingRef} position={[0, 0.34, 0]}>
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const a = (i * Math.PI * 2) / 6;
+          return (
+            <mesh key={`ember-ring-${i}`} position={[Math.cos(a) * 0.38, 0, Math.sin(a) * 0.38]}>
+              <octahedronGeometry args={[0.025]} />
+              <FlatMat color="#FFD54F" emissive="#FFA000" emissiveIntensity={3} />
+            </mesh>
+          );
+        })}
+      </group>
+
+      {/* Delicate Flame Winglets */}
+      <group ref={wingLRef} position={[-0.28, 0.38, 0]}>
+        <mesh rotation={[0, 0, Math.PI / 3.5]}>
+          <coneGeometry args={[0.1, 0.42, 8]} />
+          <FlatMat color="#FF7043" emissive="#F4511E" emissiveIntensity={2.6} transparent opacity={0.85} />
+        </mesh>
+        <mesh position={[-0.12, 0.12, 0]} rotation={[0, 0, Math.PI / 2.8]}>
+          <coneGeometry args={[0.05, 0.22, 6]} />
+          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.0} transparent opacity={0.6} />
         </mesh>
       </group>
-      <group ref={wingRRef} position={[0.24, 0.35, 0]}>
-        <mesh rotation={[0, 0, -Math.PI / 4]}>
-          <coneGeometry args={[0.09, 0.32, 6]} />
-          <FlatMat color="#FF7043" emissive="#F4511E" emissiveIntensity={2} transparent opacity={0.85} />
+      <group ref={wingRRef} position={[0.28, 0.38, 0]}>
+        <mesh rotation={[0, 0, -Math.PI / 3.5]}>
+          <coneGeometry args={[0.1, 0.42, 8]} />
+          <FlatMat color="#FF7043" emissive="#F4511E" emissiveIntensity={2.6} transparent opacity={0.85} />
+        </mesh>
+        <mesh position={[0.12, 0.12, 0]} rotation={[0, 0, -Math.PI / 2.8]}>
+          <coneGeometry args={[0.05, 0.22, 6]} />
+          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.0} transparent opacity={0.6} />
         </mesh>
       </group>
-      <pointLight color="#FF9800" intensity={2.2} distance={6} position={[0, 0.3, 0]} />
+      <pointLight color="#FFA726" intensity={2.8} distance={7.5} position={[0, 0.34, 0]} />
     </group>
   );
 }
 
-// Stage 3: Emberwisp Pyrespirit
+// Stage 3: Emberwisp Pyrespirit (Celestial Dragonling — Major Evolution Jump)
 export function EmberwispPyrespirit() {
   const groupRef = useRef();
-  const ringRef = useRef();
+  const ring1Ref = useRef();
+  const ring2Ref = useRef();
+  const ring3Ref = useRef();
   const tailRef = useRef();
+  const tailSeg2Ref = useRef();
+  const tailSeg3Ref = useRef();
+  const wingLRef = useRef();
+  const wingRRef = useRef();
+  const crownRef = useRef();
+  const constellationRef = useRef();
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    // Majestic eased bobbing flight
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(t * 2) * 0.12;
-      groupRef.current.rotation.y = Math.sin(t * 0.8) * 0.5;
+      const raw = Math.sin(t * 1.8);
+      const eased = raw * raw * raw * 0.3 + raw * 0.7;
+      groupRef.current.position.y = eased * 0.15;
+      groupRef.current.rotation.y = Math.sin(t * 0.7) * 0.45;
     }
-    if (ringRef.current) {
-      ringRef.current.rotation.x = t * 1.5;
-      ringRef.current.rotation.z = t * 2.0;
+    // Layered wing flaps with drag
+    if (wingLRef.current) {
+      wingLRef.current.rotation.z = 0.2 + Math.sin(t * 4.0) * 0.42 + Math.sin(t * 7.2) * 0.12;
+      wingLRef.current.rotation.y = Math.cos(t * 4.0) * 0.22;
     }
+    if (wingRRef.current) {
+      wingRRef.current.rotation.z = -0.2 - Math.sin(t * 4.0) * 0.42 - Math.sin(t * 7.2) * 0.12;
+      wingRRef.current.rotation.y = -Math.cos(t * 4.0) * 0.22;
+    }
+    // 3 counter-rotating celestial rings
+    if (ring1Ref.current) {
+      ring1Ref.current.rotation.x = t * 1.4;
+      ring1Ref.current.rotation.z = t * 2.0;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.rotation.y = -t * 1.6;
+      ring2Ref.current.rotation.x = -t * 1.0;
+    }
+    if (ring3Ref.current) {
+      ring3Ref.current.rotation.z = t * 1.2;
+      ring3Ref.current.rotation.y = t * 0.8;
+    }
+    // Cascading flame tail sway (each segment delayed)
     if (tailRef.current) {
-      tailRef.current.rotation.y = Math.sin(t * 3) * 0.4;
+      tailRef.current.rotation.y = Math.sin(t * 2.8) * 0.5;
+    }
+    if (tailSeg2Ref.current) {
+      tailSeg2Ref.current.rotation.y = Math.sin(t * 2.8 - 0.4) * 0.4;
+    }
+    if (tailSeg3Ref.current) {
+      tailSeg3Ref.current.rotation.y = Math.sin(t * 2.8 - 0.8) * 0.35;
+    }
+    // Crown flame flicker
+    if (crownRef.current) {
+      const cp = 1 + Math.sin(t * 6) * 0.15;
+      crownRef.current.scale.set(cp, cp * 1.2, cp);
+    }
+    // Orbiting star constellation
+    if (constellationRef.current) {
+      constellationRef.current.rotation.y = t * 1.0;
+      constellationRef.current.rotation.x = Math.sin(t * 0.4) * 0.15;
     }
   });
 
   return (
-    <group ref={groupRef} scale={1.15}>
-      {/* Dragonling Torso */}
-      <mesh position={[0, 0.45, 0]}>
-        <cylinderGeometry args={[0.2, 0.16, 0.48, 8]} />
-        <FlatMat color="#E65100" emissive="#BF360C" emissiveIntensity={1.2} />
+    <group ref={groupRef} scale={1.25}>
+      {/* === Segmented Dragon Torso (organic multi-segment body) === */}
+      {/* Upper torso */}
+      <mesh position={[0, 0.56, 0]}>
+        <sphereGeometry args={[0.23, 12, 10]} />
+        <FlatMat color="#E65100" emissive="#BF360C" emissiveIntensity={1.4} />
       </mesh>
-      {/* Radiant Chest Plate */}
-      <mesh position={[0, 0.48, 0.1]}>
-        <boxGeometry args={[0.18, 0.28, 0.1]} />
-        <FlatMat color="#FFD54F" emissive="#FFA000" emissiveIntensity={2.5} />
+      {/* Mid torso */}
+      <mesh position={[0, 0.38, 0]}>
+        <sphereGeometry args={[0.2, 12, 10]} />
+        <FlatMat color="#D84315" emissive="#BF360C" emissiveIntensity={1.2} />
       </mesh>
-      {/* Dragon Head */}
-      <group position={[0, 0.78, 0.08]}>
+      {/* Lower torso */}
+      <mesh position={[0, 0.24, 0]}>
+        <sphereGeometry args={[0.17, 10, 8]} />
+        <FlatMat color="#BF360C" emissive="#8D2B0B" emissiveIntensity={1.0} />
+      </mesh>
+      {/* Connecting torso cylinder */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[0.2, 0.18, 0.42, 10]} />
+        <FlatMat color="#E65100" emissive="#BF360C" emissiveIntensity={1.3} />
+      </mesh>
+
+      {/* Tiered Radiant Chest Plate with layered armor */}
+      <mesh position={[0, 0.54, 0.14]}>
+        <boxGeometry args={[0.22, 0.3, 0.08]} />
+        <FlatMat color="#FFD54F" emissive="#FFA000" emissiveIntensity={3.0} />
+      </mesh>
+      <mesh position={[0, 0.54, 0.18]}>
+        <boxGeometry args={[0.16, 0.2, 0.04]} />
+        <FlatMat color="#FFF9C4" emissive="#FFD54F" emissiveIntensity={3.5} />
+      </mesh>
+      <mesh position={[0, 0.38, 0.13]}>
+        <coneGeometry args={[0.12, 0.18, 4]} />
+        <FlatMat color="#FFF9C4" emissive="#FFD54F" emissiveIntensity={3.2} />
+      </mesh>
+
+      {/* === Dragon Head with Horns & Crown === */}
+      <group position={[0, 0.82, 0.08]}>
+        {/* Rounded head */}
         <mesh>
-          <boxGeometry args={[0.24, 0.22, 0.32]} />
-          <FlatMat color="#F57C00" emissive="#E65100" emissiveIntensity={1.4} />
+          <sphereGeometry args={[0.17, 12, 10]} />
+          <FlatMat color="#F57C00" emissive="#E65100" emissiveIntensity={1.6} />
+        </mesh>
+        {/* Snout extension */}
+        <mesh position={[0, -0.04, 0.14]}>
+          <boxGeometry args={[0.18, 0.14, 0.16]} />
+          <FlatMat color="#EF6C00" emissive="#E65100" emissiveIntensity={1.4} />
+        </mesh>
+        {/* Rounded brow ridge */}
+        <mesh position={[0, 0.08, 0.08]}>
+          <sphereGeometry args={[0.14, 10, 6]} />
+          <FlatMat color="#E65100" emissive="#BF360C" emissiveIntensity={1.2} />
         </mesh>
         {/* Golden Swept Antler Horns */}
-        <mesh position={[-0.14, 0.16, -0.1]} rotation={[-0.4, 0, -0.5]}>
-          <coneGeometry args={[0.045, 0.32, 6]} />
-          <FlatMat color="#FFD700" metalness={0.7} roughness={0.3} emissive="#FFA000" emissiveIntensity={1.2} />
+        <mesh position={[-0.15, 0.2, -0.08]} rotation={[-0.4, 0, -0.52]}>
+          <coneGeometry args={[0.045, 0.4, 8]} />
+          <FlatMat color="#FFD700" metalness={0.75} roughness={0.25} emissive="#FFA000" emissiveIntensity={1.8} />
         </mesh>
-        <mesh position={[0.14, 0.16, -0.1]} rotation={[-0.4, 0, 0.5]}>
-          <coneGeometry args={[0.045, 0.32, 6]} />
-          <FlatMat color="#FFD700" metalness={0.7} roughness={0.3} emissive="#FFA000" emissiveIntensity={1.2} />
+        <mesh position={[0.15, 0.2, -0.08]} rotation={[-0.4, 0, 0.52]}>
+          <coneGeometry args={[0.045, 0.4, 8]} />
+          <FlatMat color="#FFD700" metalness={0.75} roughness={0.25} emissive="#FFA000" emissiveIntensity={1.8} />
         </mesh>
-        {/* Blazing Eyes */}
-        <mesh position={[-0.08, 0.04, 0.16]}>
-          <sphereGeometry args={[0.035, 8, 6]} />
-          <FlatMat color="#FFFDE7" emissive="#FFFFFF" emissiveIntensity={3} />
+        {/* Secondary inner horns */}
+        <mesh position={[-0.08, 0.18, -0.04]} rotation={[-0.3, 0, -0.35]}>
+          <coneGeometry args={[0.025, 0.2, 6]} />
+          <FlatMat color="#FFC107" metalness={0.7} emissive="#FF8F00" emissiveIntensity={1.5} />
         </mesh>
-        <mesh position={[0.08, 0.04, 0.16]}>
-          <sphereGeometry args={[0.035, 8, 6]} />
-          <FlatMat color="#FFFDE7" emissive="#FFFFFF" emissiveIntensity={3} />
+        <mesh position={[0.08, 0.18, -0.04]} rotation={[-0.3, 0, 0.35]}>
+          <coneGeometry args={[0.025, 0.2, 6]} />
+          <FlatMat color="#FFC107" metalness={0.7} emissive="#FF8F00" emissiveIntensity={1.5} />
+        </mesh>
+        {/* Crown Flame Crest */}
+        <group ref={crownRef} position={[0, 0.28, 0]}>
+          <mesh>
+            <coneGeometry args={[0.08, 0.2, 8]} />
+            <FlatMat color="#FF5722" emissive="#E64A19" emissiveIntensity={3.0} />
+          </mesh>
+          <mesh position={[-0.06, -0.02, 0]} rotation={[0, 0, 0.3]}>
+            <coneGeometry args={[0.04, 0.14, 6]} />
+            <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.5} transparent opacity={0.8} />
+          </mesh>
+          <mesh position={[0.06, -0.02, 0]} rotation={[0, 0, -0.3]}>
+            <coneGeometry args={[0.04, 0.14, 6]} />
+            <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.5} transparent opacity={0.8} />
+          </mesh>
+        </group>
+        {/* Blazing Starlight Dragon Eyes — larger and more luminous */}
+        <mesh position={[-0.09, 0.04, 0.16]}>
+          <sphereGeometry args={[0.042, 10, 8]} />
+          <FlatMat color="#FFFDE7" emissive="#FFFFFF" emissiveIntensity={4.0} />
+        </mesh>
+        <mesh position={[0.09, 0.04, 0.16]}>
+          <sphereGeometry args={[0.042, 10, 8]} />
+          <FlatMat color="#FFFDE7" emissive="#FFFFFF" emissiveIntensity={4.0} />
+        </mesh>
+        {/* Eye pupils */}
+        <mesh position={[-0.085, 0.04, 0.2]}>
+          <sphereGeometry args={[0.02, 8, 6]} />
+          <FlatMat color="#E65100" emissive="#BF360C" emissiveIntensity={2} />
+        </mesh>
+        <mesh position={[0.085, 0.04, 0.2]}>
+          <sphereGeometry args={[0.02, 8, 6]} />
+          <FlatMat color="#E65100" emissive="#BF360C" emissiveIntensity={2} />
         </mesh>
       </group>
-      {/* Orbiting Celestial Golden Rings */}
-      <group ref={ringRef} position={[0, 0.5, 0]}>
-        <mesh rotation={[Math.PI / 3, 0, 0]}>
-          <torusGeometry args={[0.42, 0.025, 8, 24]} />
-          <FlatMat color="#FFD700" metalness={0.8} emissive="#FFA000" emissiveIntensity={2} />
+
+      {/* === Layered Feathered Flame Wings === */}
+      <group ref={wingLRef} position={[-0.22, 0.58, -0.05]}>
+        {/* Primary outer wing feathers */}
+        <mesh position={[-0.3, 0.2, 0]} rotation={[0, 0, 0.5]}>
+          <coneGeometry args={[0.16, 0.7, 8]} />
+          <FlatMat color="#FF5722" emissive="#E64A19" emissiveIntensity={2.8} transparent opacity={0.88} />
+        </mesh>
+        {/* Secondary inner feathers */}
+        <mesh position={[-0.18, 0.14, 0]} rotation={[0, 0, 0.4]}>
+          <coneGeometry args={[0.1, 0.5, 6]} />
+          <FlatMat color="#FF7043" emissive="#FF5722" emissiveIntensity={2.2} transparent opacity={0.75} />
+        </mesh>
+        {/* Tertiary tips */}
+        <mesh position={[-0.48, 0.38, 0]} rotation={[0, 0, 0.7]}>
+          <coneGeometry args={[0.08, 0.42, 6]} />
+          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={3.0} transparent opacity={0.82} />
+        </mesh>
+        {/* Trailing wisps */}
+        <mesh position={[-0.55, 0.48, 0]} rotation={[0, 0, 0.9]}>
+          <coneGeometry args={[0.04, 0.25, 6]} />
+          <FlatMat color="#FFE082" emissive="#FFD54F" emissiveIntensity={2.5} transparent opacity={0.6} />
         </mesh>
       </group>
-      {/* Sinuous Flame Tail */}
-      <group ref={tailRef} position={[0, 0.18, -0.15]}>
+      <group ref={wingRRef} position={[0.22, 0.58, -0.05]}>
+        <mesh position={[0.3, 0.2, 0]} rotation={[0, 0, -0.5]}>
+          <coneGeometry args={[0.16, 0.7, 8]} />
+          <FlatMat color="#FF5722" emissive="#E64A19" emissiveIntensity={2.8} transparent opacity={0.88} />
+        </mesh>
+        <mesh position={[0.18, 0.14, 0]} rotation={[0, 0, -0.4]}>
+          <coneGeometry args={[0.1, 0.5, 6]} />
+          <FlatMat color="#FF7043" emissive="#FF5722" emissiveIntensity={2.2} transparent opacity={0.75} />
+        </mesh>
+        <mesh position={[0.48, 0.38, 0]} rotation={[0, 0, -0.7]}>
+          <coneGeometry args={[0.08, 0.42, 6]} />
+          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={3.0} transparent opacity={0.82} />
+        </mesh>
+        <mesh position={[0.55, 0.48, 0]} rotation={[0, 0, -0.9]}>
+          <coneGeometry args={[0.04, 0.25, 6]} />
+          <FlatMat color="#FFE082" emissive="#FFD54F" emissiveIntensity={2.5} transparent opacity={0.6} />
+        </mesh>
+      </group>
+
+      {/* === Triple Interlocking Celestial Golden Rings === */}
+      <group ref={ring1Ref} position={[0, 0.54, 0]}>
+        <mesh rotation={[Math.PI / 3.2, 0, 0]}>
+          <torusGeometry args={[0.48, 0.025, 10, 32]} />
+          <FlatMat color="#FFD700" metalness={0.85} emissive="#FFA000" emissiveIntensity={2.6} />
+        </mesh>
+      </group>
+      <group ref={ring2Ref} position={[0, 0.54, 0]}>
+        <mesh rotation={[-Math.PI / 4, Math.PI / 3, 0]}>
+          <torusGeometry args={[0.54, 0.022, 10, 32]} />
+          <FlatMat color="#FFE082" metalness={0.9} emissive="#FFB300" emissiveIntensity={2.2} />
+        </mesh>
+      </group>
+      <group ref={ring3Ref} position={[0, 0.54, 0]}>
+        <mesh rotation={[Math.PI / 6, -Math.PI / 5, Math.PI / 4]}>
+          <torusGeometry args={[0.6, 0.018, 8, 28]} />
+          <FlatMat color="#FFF9C4" metalness={0.85} emissive="#FFD54F" emissiveIntensity={1.8} transparent opacity={0.75} />
+        </mesh>
+      </group>
+
+      {/* === Cascading Flame Tail (3-segment chain) === */}
+      <group ref={tailRef} position={[0, 0.2, -0.16]}>
         <mesh rotation={[0.6, 0, 0]}>
-          <coneGeometry args={[0.12, 0.5, 8]} />
-          <FlatMat color="#FF7043" emissive="#D84315" emissiveIntensity={1.8} />
+          <coneGeometry args={[0.14, 0.48, 10]} />
+          <FlatMat color="#FF7043" emissive="#D84315" emissiveIntensity={2.2} />
         </mesh>
-        <mesh position={[0, -0.22, -0.18]} rotation={[0.4, 0, 0]}>
-          <coneGeometry args={[0.07, 0.35, 6]} />
-          <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.5} />
-        </mesh>
+        <group ref={tailSeg2Ref} position={[0, -0.22, -0.18]}>
+          <mesh rotation={[0.4, 0, 0]}>
+            <coneGeometry args={[0.1, 0.38, 8]} />
+            <FlatMat color="#FFA726" emissive="#FF9800" emissiveIntensity={2.8} />
+          </mesh>
+          <group ref={tailSeg3Ref} position={[0, -0.18, -0.14]}>
+            <mesh rotation={[0.25, 0, 0]}>
+              <coneGeometry args={[0.06, 0.3, 8]} />
+              <FlatMat color="#FFE082" emissive="#FFEE58" emissiveIntensity={3.5} />
+            </mesh>
+            {/* Final tail tip wisp */}
+            <mesh position={[0, -0.18, -0.08]} rotation={[0.15, 0, 0]}>
+              <coneGeometry args={[0.03, 0.18, 6]} />
+              <FlatMat color="#FFF9C4" emissive="#FFF176" emissiveIntensity={4.0} transparent opacity={0.7} />
+            </mesh>
+          </group>
+        </group>
       </group>
-      <pointLight color="#FF9800" intensity={3.2} distance={8} position={[0, 0.5, 0]} />
+
+      {/* === Orbiting Star-Ember Constellation === */}
+      <group ref={constellationRef} position={[0, 0.6, 0]}>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+          const a = (i * Math.PI * 2) / 8;
+          const r = 0.72 + (i % 2) * 0.1;
+          const y = (i % 3 - 1) * 0.12;
+          return (
+            <mesh key={`star-${i}`} position={[Math.cos(a) * r, y, Math.sin(a) * r]}>
+              <octahedronGeometry args={[0.028 + (i % 3) * 0.008]} />
+              <FlatMat
+                color={i % 2 === 0 ? '#FFE082' : '#FFCC80'}
+                emissive={i % 2 === 0 ? '#FFD54F' : '#FFA726'}
+                emissiveIntensity={3.5}
+              />
+            </mesh>
+          );
+        })}
+      </group>
+
+      <pointLight color="#FF9800" intensity={4.0} distance={10} position={[0, 0.54, 0]} />
     </group>
   );
 }
+
 
 // ==============================================================================
 // 2. ROOTLING (Discipline Spirit)

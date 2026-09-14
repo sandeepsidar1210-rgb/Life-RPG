@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { RoomCanvas } from './MyRoom/RoomCanvas.jsx';
 import { CanvasErrorBoundary } from './MyRoom/CanvasErrorBoundary.jsx';
 import { RoomTrunkPanel } from './MyRoom/RoomTrunkPanel.jsx';
@@ -6,7 +6,8 @@ import { RoomSwitcher } from './MyRoom/RoomSwitcher.jsx';
 
 /**
  * MyRoom
- * Main 3D study sanctuary container with multi-room progression.
+ * Main 3D study sanctuary container with multi-room progression,
+ * free user-controlled placement, and direct 3D drag-to-reposition.
  * Lazy-loaded and wrapped in Suspense and CanvasErrorBoundary.
  */
 export function MyRoom({
@@ -17,10 +18,12 @@ export function MyRoom({
   onSelectRoom,
   userLevel = 1,
   onToggleEquip,
+  onUpdateItemPosition,
   equippingId,
   onNavigateToShop
 }) {
   const [simulateWebGLFailure, setSimulateWebGLFailure] = useState(false);
+  const [placingItem, setPlacingItem] = useState(null);
 
   // Determine active spirit 3D model key
   const spiritModelKey = useMemo(() => {
@@ -57,6 +60,22 @@ export function MyRoom({
   );
 
   const roomName = activeRoom?.name || 'Study Desk';
+
+  // Handle confirming placement at raycasted (x, y, z) coordinates and surface
+  const handleConfirmPlacement = useCallback(
+    (targetX, targetZ, targetY = 0, surface = 'floor') => {
+      if (!placingItem) return;
+      onToggleEquip?.(placingItem.id, activeRoom?.id, true, {
+        position_x: targetX,
+        position_y: targetY,
+        position_z: targetZ,
+        rotation_y: 0,
+        surface
+      });
+      setPlacingItem(null);
+    },
+    [placingItem, activeRoom?.id, onToggleEquip]
+  );
 
   // Empty state if user owns 0 items
   if (ownedItems.length === 0) {
@@ -98,7 +117,7 @@ export function MyRoom({
             <span aria-hidden="true">🛋️</span> 3D Study Sanctuary
           </h2>
           <p className="text-xs text-cozy-brown-medium">
-            Multiple unlockable chambers • {roomName} • Low-poly 3D powered by React Three Fiber
+            Multiple unlockable chambers • {roomName} • Free user-controlled 3D placement
           </p>
         </div>
 
@@ -119,12 +138,15 @@ export function MyRoom({
         </div>
       </div>
 
-      {/* Multi-Room Switcher Tabs & Level Anticipation Hooks */}
+      {/* Multi-Room Switcher Tabs */}
       {rooms.length > 0 && (
         <RoomSwitcher
           rooms={rooms}
           activeRoomId={activeRoom?.id}
-          onSelectRoom={onSelectRoom}
+          onSelectRoom={(r) => {
+            setPlacingItem(null);
+            onSelectRoom(r);
+          }}
           inventory={ownedItems}
           userLevel={userLevel}
         />
@@ -142,9 +164,14 @@ export function MyRoom({
           >
             <RoomCanvas
               equippedNames={equippedNames}
+              equippedItems={roomEquippedItems}
               roomName={roomName}
               spiritModelKey={spiritModelKey}
               simulateWebGLFailure={simulateWebGLFailure}
+              placingItem={placingItem}
+              onCancelPlacement={() => setPlacingItem(null)}
+              onConfirmPlacement={handleConfirmPlacement}
+              onUpdateItemPosition={onUpdateItemPosition}
             />
           </CanvasErrorBoundary>
         </div>
@@ -159,6 +186,9 @@ export function MyRoom({
             equippingId={equippingId}
             isSimulatingFailure={simulateWebGLFailure}
             onToggleSimulateFailure={() => setSimulateWebGLFailure((prev) => !prev)}
+            placingItemId={placingItem?.id}
+            onStartPlacement={(item) => setPlacingItem(item)}
+            onCancelPlacement={() => setPlacingItem(null)}
           />
         </div>
       </div>

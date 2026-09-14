@@ -541,9 +541,9 @@ export function ScholarProvider({ children }) {
   };
 
   // =========================================================================
-  // Equip / Unequip Item Action
+  // Equip / Unequip Item Action (with exact 3D coordinates support)
   // =========================================================================
-  const handleToggleEquip = async (inventoryId, targetRoomId, targetEquippedOverride) => {
+  const handleToggleEquip = async (inventoryId, targetRoomId, targetEquippedOverride, coordinates = null) => {
     const itemToToggle = inventory.find((inv) => inv.id === inventoryId);
     if (!itemToToggle || equippingId) return;
 
@@ -551,6 +551,12 @@ export function ScholarProvider({ children }) {
     const newEquipped = targetEquippedOverride !== undefined ? targetEquippedOverride : !itemToToggle.equipped;
     const isCompanion = itemToToggle.item?.category === 'companion';
     const resolvedRoomId = isCompanion ? null : targetRoomId || activeRoom?.id || null;
+
+    const posX = coordinates?.position_x !== undefined ? Number(coordinates.position_x) : null;
+    const posY = coordinates?.position_y !== undefined ? Number(coordinates.position_y) : 0;
+    const posZ = coordinates?.position_z !== undefined ? Number(coordinates.position_z) : null;
+    const rotY = coordinates?.rotation_y !== undefined ? Number(coordinates.rotation_y) : 0;
+    const surf = coordinates?.surface !== undefined ? String(coordinates.surface) : 'floor';
 
     const previousInventory = [...inventory];
 
@@ -563,7 +569,8 @@ export function ScholarProvider({ children }) {
           return {
             ...inv,
             equipped: newEquipped,
-            room_id: newEquipped ? resolvedRoomId : null
+            room_id: newEquipped ? resolvedRoomId : null,
+            ...(newEquipped && posX !== null ? { position_x: posX, position_y: posY, position_z: posZ, rotation_y: rotY, surface: surf } : {})
           };
         }
         return inv;
@@ -571,16 +578,25 @@ export function ScholarProvider({ children }) {
     );
 
     try {
+      const payload = {
+        equipped: newEquipped,
+        room_id: resolvedRoomId
+      };
+      if (newEquipped && posX !== null && posZ !== null) {
+        payload.position_x = posX;
+        payload.position_y = posY;
+        payload.position_z = posZ;
+        payload.rotation_y = rotY;
+        payload.surface = surf;
+      }
+
       const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/equip`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          equipped: newEquipped,
-          room_id: resolvedRoomId
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -609,6 +625,55 @@ export function ScholarProvider({ children }) {
       addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
       setEquippingId(null);
+    }
+  };
+
+  // =========================================================================
+  // Drag-and-Drop Repositioning Action
+  // =========================================================================
+  const handleUpdateItemPosition = async (inventoryId, { position_x, position_y = 0, position_z, rotation_y = 0, surface = 'floor' }) => {
+    const item = inventory.find((inv) => inv.id === inventoryId);
+    if (!item) return;
+
+    const previousInventory = [...inventory];
+
+    // Optimistically update position
+    setInventory((prev) =>
+      prev.map((inv) =>
+        inv.id === inventoryId
+          ? { ...inv, position_x, position_y, position_z, rotation_y, surface }
+          : inv
+      )
+    );
+
+    try {
+      const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/position`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          position_x,
+          position_y,
+          position_z,
+          rotation_y,
+          surface
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to reposition item');
+
+      if (data.inventory) {
+        setInventory((prev) =>
+          prev.map((inv) => (inv.id === inventoryId ? { ...inv, ...data.inventory } : inv))
+        );
+      }
+      playSound('click');
+    } catch (err) {
+      setInventory(previousInventory);
+      addToast(getFriendlyErrorMessage(err), 'error');
     }
   };
 
@@ -804,6 +869,7 @@ export function ScholarProvider({ children }) {
         handleDeleteQuest,
         handlePurchaseItem,
         handleToggleEquip,
+        handleUpdateItemPosition,
         handleSwitchActiveSpirit,
         handleGreetSpirit,
         dismissGreetingBubble,

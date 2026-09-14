@@ -14,6 +14,7 @@ export function RoomPage() {
     handleSelectRoom,
     character,
     handleToggleEquip,
+    handleUpdateItemPosition,
     equippingId
   } = useScholar();
 
@@ -26,8 +27,9 @@ export function RoomPage() {
           activeRoom={activeRoom}
           spirit={spirit}
           onSelectRoom={handleSelectRoom}
-          userLevel={character.level}
+          userLevel={character?.level || 1}
           onToggleEquip={handleToggleEquip}
+          onUpdateItemPosition={handleUpdateItemPosition}
           equippingId={equippingId}
           onNavigateToShop={() => navigate('/shop')}
         />

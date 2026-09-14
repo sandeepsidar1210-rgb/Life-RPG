@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { resolveRoomPlacements, getPlacementHintForItem } from './placementZones.js';
 
 const ITEM_ICONS = {
   'Warm Desk Lamp': '💡',
@@ -33,7 +32,10 @@ export function RoomTrunkPanel({
   onToggleEquip,
   equippingId,
   isSimulatingFailure,
-  onToggleSimulateFailure
+  onToggleSimulateFailure,
+  placingItemId = null,
+  onStartPlacement = () => {},
+  onCancelPlacement = () => {}
 }) {
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -52,20 +54,12 @@ export function RoomTrunkPanel({
   const roomName = activeRoom?.name || 'Study Desk';
   const activeRoomId = activeRoom?.id;
 
-  // Set of equipped item names in this active chamber
-  const equippedNames = useMemo(() => {
-    return new Set(
-      inventory
-        .filter((inv) => inv.equipped && (inv.room_id === activeRoomId || inv.item?.category === 'companion'))
-        .map((inv) => inv.item?.name)
-        .filter(Boolean)
-    );
+  // Placed count in this chamber
+  const placedCount = useMemo(() => {
+    return inventory.filter(
+      (inv) => inv.equipped && (inv.room_id === activeRoomId || inv.item?.category === 'companion')
+    ).length;
   }, [inventory, activeRoomId]);
-
-  // Live chamber zone occupancy calculation
-  const { zoneOccupancy, totalZones, occupiedCount, isFull } = useMemo(() => {
-    return resolveRoomPlacements(equippedNames, roomName);
-  }, [equippedNames, roomName]);
 
   return (
     <section 
@@ -79,7 +73,7 @@ export function RoomTrunkPanel({
             <span aria-hidden="true">🧳</span> Scholar's Trunk
           </h3>
           <p className="text-xs text-cozy-brown-medium">
-            Placing decor into: <strong className="text-cozy-brown-dark">{roomName}</strong>
+            Active Chamber: <strong className="text-cozy-brown-dark">{roomName}</strong> • {placedCount} furnishings placed
           </p>
         </div>
 
@@ -122,48 +116,28 @@ export function RoomTrunkPanel({
         })}
       </div>
 
-      {/* Designated Placement Zones Availability Widget */}
-      <div className="bg-cozy-parchment/60 p-3 rounded-pixel border border-cozy-border space-y-2">
-        <div className="flex items-center justify-between text-xs font-pixel">
-          <span className="text-cozy-brown-dark font-bold flex items-center gap-1.5">
-            <span>📍</span> Placement Zones ({occupiedCount}/{totalZones})
-          </span>
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-            isFull ? 'bg-amber-600/20 text-amber-800' : 'bg-cozy-sage/20 text-cozy-sage-dark'
-          }`}>
-            {isFull ? 'All Zones Occupied' : `${totalZones - occupiedCount} Empty`}
-          </span>
+      {/* Free Placement Active Banner (When in placement mode) */}
+      {placingItemId && (
+        <div className="p-3 bg-amber-100/90 dark:bg-amber-950/40 border-2 border-amber-600/70 rounded-pixel flex items-center justify-between gap-2 text-xs font-pixel text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2 truncate">
+            <span className="animate-bounce">🎯</span>
+            <span className="truncate">Placement Mode: Click floor in 3D room to place item</span>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelPlacement}
+            className="touch-target px-2 py-1 bg-white/80 dark:bg-stone-800 text-cozy-brown-dark text-[11px] rounded border border-cozy-border font-bold hover:bg-white"
+          >
+            Cancel
+          </button>
         </div>
-
-        {/* 6 Fixed Placement Anchor Points */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-          {zoneOccupancy.map((zone) => (
-            <div
-              key={zone.zoneId}
-              className={`px-2 py-1.5 rounded border text-[10px] font-pixel transition flex flex-col justify-center ${
-                zone.isOccupied
-                  ? 'bg-cozy-card border-cozy-sage-dark/60 text-cozy-brown-dark shadow-pixel-xs'
-                  : 'bg-cozy-card/40 border-dashed border-cozy-border text-cozy-brown-medium'
-              }`}
-            >
-              <div className="font-bold truncate">{zone.label}</div>
-              <div className="text-[9px] truncate">
-                {zone.isOccupied ? (
-                  <span className="text-cozy-sage-dark font-sans font-medium">✓ {zone.occupiedBy}</span>
-                ) : (
-                  <span className="italic text-cozy-brown-light">Empty</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Items List */}
       <div 
         role="region"
         aria-label="Trunk items"
-        className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1"
+        className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1"
       >
         {filteredItems.length === 0 ? (
           <div className="text-center py-6 text-xs text-cozy-brown-medium italic bg-cozy-parchment/60 rounded-pixel border border-dashed border-cozy-border">
@@ -176,6 +150,7 @@ export function RoomTrunkPanel({
             const isEquipping = equippingId === inv.id;
             const isCompanion = item?.category === 'companion';
             const isBadge = item?.category === 'badge';
+            const isCurrentlyPlacing = placingItemId === inv.id;
 
             // Room-scoped states
             const defaultRoomId = (rooms || []).find((r) => r.display_order === 1)?.id || rooms[0]?.id;
@@ -184,14 +159,13 @@ export function RoomTrunkPanel({
             const isEquippedInOtherRoom = isEquipped && itemRoomId !== activeRoomId;
             const otherRoomName = inv.room?.name || (rooms || []).find((r) => r.id === itemRoomId)?.name || 'another chamber';
 
-            // Zone availability check for unequipped decor
-            const placementHint = getPlacementHintForItem(item?.name, equippedNames, roomName);
-            const cannotPlaceDecor = !isEquippedInThisRoom && !isCompanion && !isBadge && isFull;
-
             let actionText = 'Place';
             let buttonStyle = 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
 
-            if (isCompanion) {
+            if (isCurrentlyPlacing) {
+              actionText = 'Placing...';
+              buttonStyle = 'bg-amber-500 text-white border-amber-600 animate-pulse';
+            } else if (isCompanion) {
               actionText = isEquipped ? 'Rest' : 'Summon';
               if (isEquipped) {
                 buttonStyle = 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-cozy-terracotta-dark';
@@ -207,28 +181,29 @@ export function RoomTrunkPanel({
                 actionText = 'Recall';
                 buttonStyle = 'bg-cozy-terracotta-subtle hover:bg-cozy-terracotta text-cozy-terracotta-dark hover:text-white border-cozy-terracotta-dark';
               } else if (isEquippedInOtherRoom) {
-                actionText = cannotPlaceDecor ? 'Chamber Full' : 'Move Here';
-                buttonStyle = cannotPlaceDecor 
-                  ? 'bg-cozy-parchment text-cozy-brown-medium border-cozy-border opacity-60 cursor-not-allowed'
-                  : 'bg-cozy-parchment hover:bg-cozy-sage text-cozy-brown-dark hover:text-white border-cozy-sage-dark';
+                actionText = 'Move Here';
+                buttonStyle = 'bg-cozy-parchment hover:bg-cozy-sage text-cozy-brown-dark hover:text-white border-cozy-sage-dark';
               } else {
-                actionText = cannotPlaceDecor ? 'Zones Full' : 'Place';
-                buttonStyle = cannotPlaceDecor
-                  ? 'bg-cozy-parchment text-cozy-brown-medium border-cozy-border opacity-60 cursor-not-allowed'
-                  : 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
+                actionText = 'Place';
+                buttonStyle = 'bg-cozy-sage hover:bg-cozy-sage-dark text-white border-cozy-sage-dark shadow-pixel-sm';
               }
             }
 
             const handleItemClick = () => {
-              if (cannotPlaceDecor) return;
+              if (isCurrentlyPlacing) {
+                onCancelPlacement();
+                return;
+              }
 
               if (isCompanion || isBadge) {
                 onToggleEquip(inv.id, activeRoomId, !isEquipped);
               } else {
                 if (isEquippedInThisRoom) {
+                  // Recall decor item back into trunk
                   onToggleEquip(inv.id, activeRoomId, false);
                 } else {
-                  onToggleEquip(inv.id, activeRoomId, true);
+                  // Enter interactive free click-to-place mode!
+                  onStartPlacement(inv);
                 }
               }
             };
@@ -237,7 +212,9 @@ export function RoomTrunkPanel({
               <div
                 key={inv.id}
                 className={`p-3 rounded-pixel border-2 transition flex items-center justify-between gap-3 ${
-                  isEquippedInThisRoom || (isCompanion && isEquipped)
+                  isCurrentlyPlacing
+                    ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 shadow-md ring-2 ring-amber-400/40'
+                    : isEquippedInThisRoom || (isCompanion && isEquipped)
                     ? 'bg-cozy-parchment/90 border-cozy-sage-dark shadow-pixel-sm'
                     : isEquippedInOtherRoom
                     ? 'bg-cozy-parchment/70 border-cozy-border hover:border-cozy-brown-light'
@@ -282,16 +259,26 @@ export function RoomTrunkPanel({
                       {item?.description}
                     </p>
                     <p className="text-[10px] text-cozy-sage-dark font-pixel mt-0.5">
-                      📍 {placementHint}
+                      {isEquippedInThisRoom
+                        ? (inv.position_x !== null && inv.position_x !== undefined
+                            ? `📍 Placed (${inv.position_x.toFixed(1)}, ${inv.position_z?.toFixed(1)}) • Drag in 3D to move`
+                            : '📍 Placed in chamber • Drag in 3D to move')
+                        : isCurrentlyPlacing
+                        ? '🎯 Click floor in 3D room to place'
+                        : isCompanion
+                        ? '🐾 Companion joins all chambers'
+                        : isBadge
+                        ? '🎖️ Display on Scholar Profile'
+                        : '✨ Click Place, then click anywhere on floor'}
                     </p>
                   </div>
                 </div>
 
-                {/* Equip / Unequip Toggle Button */}
+                {/* Action Button */}
                 <button
                   type="button"
                   onClick={handleItemClick}
-                  disabled={isEquipping || cannotPlaceDecor}
+                  disabled={isEquipping}
                   aria-label={`${actionText} ${item?.name}`}
                   className={`touch-target pixel-box px-3.5 py-2 rounded text-xs font-pixel font-bold transition flex-shrink-0 disabled:opacity-50 border-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cozy-brown-dark ${buttonStyle}`}
                 >
@@ -311,7 +298,7 @@ export function RoomTrunkPanel({
       <div className="text-[11px] text-cozy-brown-medium bg-cozy-parchment/60 p-2.5 rounded-pixel border border-cozy-border flex items-start gap-2">
         <span className="text-sm select-none" aria-hidden="true">💡</span>
         <span>
-          <strong>Decor</strong> automatically snaps to designated non-overlapping anchor zones in <em>{roomName}</em>. <strong>Companions</strong> have dedicated resting spots and accompany you wherever you study!
+          <strong>Free Placement</strong>: Click <em>Place</em> on any decor item, then click anywhere on the room floor. You can click &amp; drag placed decor in 3D anytime to reposition it!
         </span>
       </div>
     </section>
