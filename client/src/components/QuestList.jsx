@@ -8,7 +8,7 @@ const ATTRIBUTE_OPTIONS = [
   { id: 'creativity', name: 'Creativity', icon: '🎨', color: 'bg-cozy-stats-creativity', text: 'Writing, arts & coding' },
 ];
 
-export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, completingId }) {
+export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, completingId, spirit = null }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -297,6 +297,12 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
             const attr = ATTRIBUTE_OPTIONS.find(a => a.id === quest.attribute_type) || ATTRIBUTE_OPTIONS[0];
             const isCompleting = completingId === quest.id;
 
+            const activeSpiritAttr = spirit?.species?.attribute_type || spirit?.spirit?.attribute_type;
+            const spiritStageNum = spirit?.current_stage?.stage_number || spirit?.spirit?.current_stage || 1;
+            const bonusMultiplier = spiritStageNum === 3 ? 0.35 : spiritStageNum === 2 ? 0.20 : 0.10;
+            const isResonant = activeSpiritAttr && quest.attribute_type === activeSpiritAttr;
+            const bonusFp = isResonant ? Math.round(quest.focus_points_reward * bonusMultiplier) : 0;
+
             return (
               <motion.article
                 key={quest.id}
@@ -305,13 +311,23 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 aria-labelledby={`quest-title-${quest.id}`}
-                className="pixel-box bg-cozy-card p-4 sm:p-5 rounded-pixel shadow-pixel-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-cozy-brown-dark hover:border-cozy-brown-dark transition"
+                className={`pixel-box bg-cozy-card p-4 sm:p-5 rounded-pixel shadow-pixel-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 transition ${
+                  isResonant ? 'border-amber-700/80 bg-gradient-to-r from-amber-50/40 via-cozy-card to-cozy-card' : 'border-cozy-brown-dark hover:border-cozy-brown-dark'
+                }`}
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-pixel font-bold bg-cozy-parchment text-cozy-brown-dark border border-cozy-border flex items-center gap-1">
                       <span aria-hidden="true">{attr.icon}</span> {attr.name}
                     </span>
+
+                    {isResonant && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-pixel font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-pixel-2xs">
+                        <span aria-hidden="true">✨</span>
+                        <span>+{Math.round(bonusMultiplier * 100)}% Spirit Bonus</span>
+                      </span>
+                    )}
+
                     <h3 id={`quest-title-${quest.id}`} className="font-medium text-sm sm:text-base text-cozy-brown-dark truncate max-w-full">
                       {quest.title}
                     </h3>
@@ -324,8 +340,13 @@ export function QuestList({ quests, onComplete, onCreate, onEdit, onDelete, comp
                   )}
 
                   {/* Rewards preview */}
-                  <div className="flex items-center gap-3 text-[11px] font-pixel text-cozy-brown-medium pl-1">
-                    <span className="text-cozy-sage-dark font-bold">+{quest.focus_points_reward} FP</span>
+                  <div className="flex items-center gap-3 text-[11px] font-pixel text-cozy-brown-medium pl-1 flex-wrap">
+                    <span className="text-cozy-sage-dark font-bold">
+                      +{quest.focus_points_reward} FP
+                      {isResonant && (
+                        <span className="text-amber-800 ml-1 font-normal">(+{bonusFp} Bonus)</span>
+                      )}
+                    </span>
                     <span aria-hidden="true">•</span>
                     <span className="text-cozy-gold-dark font-bold">+{quest.cozy_coins_reward} Coins</span>
                     <span aria-hidden="true">•</span>

@@ -2,7 +2,14 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
 import { checkAchievements } from '../utils/achievements.js';
-import { determineHighestAttribute, FALLBACK_SPECIES, FALLBACK_STAGES, getOrCreateFallbackState } from './spirit.js';
+import {
+  determineHighestAttribute,
+  FALLBACK_SPECIES,
+  FALLBACK_STAGES,
+  getOrCreateFallbackState,
+  getActiveSpiritInfo,
+  SPIRIT_BONUS_MULTIPLIERS
+} from './spirit.js';
 
 const router = express.Router();
 
@@ -326,8 +333,19 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
       });
     }
 
+    // 0. Fetch active spirit for mechanical perks (attribute bonus & streak guardian)
+    const activeSpirit = await getActiveSpiritInfo(userId, client, character);
+    const activeAttr = activeSpirit.attribute_type;
+    const spiritStage = activeSpirit.current_stage;
+
+    // Check passive attribute bonus
+    const isMatchingAttribute = (quest.attribute_type || 'focus') === activeAttr;
+    const bonusMultiplier = isMatchingAttribute ? (SPIRIT_BONUS_MULTIPLIERS[spiritStage] || 0.10) : 0;
+    const spiritBonusXp = isMatchingAttribute ? Math.round(quest.focus_points_reward * bonusMultiplier) : 0;
+    const totalFocusPointsEarned = quest.focus_points_reward + spiritBonusXp;
+
     // b. Add focus_points_reward to current_xp and cozy_coins_reward to cozy_coins
-    let currentXp = (character.current_xp || 0) + quest.focus_points_reward;
+    let currentXp = (character.current_xp || 0) + totalFocusPointsEarned;
     let cozyCoins = (character.cozy_coins || 0) + quest.cozy_coins_reward;
     let level = character.level || 1;
     let xpToNextLevel = character.xp_to_next_level || Math.round(100 * Math.pow(level, 1.5));
@@ -356,7 +374,7 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
 
     const leveledUp = levelsGained > 0;
 
-    // e. Streak update: UTC timezone-safe
+    // e. Streak update: UTC timezone-safe with Streak Guardian grace day protection
     const todayUTC = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     let { data: streak, error: streakErr } = await client
       .from('streaks')
@@ -371,6 +389,9 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
     let currentStreak = streak.current_streak || 0;
     let longestStreak = streak.longest_streak || 0;
     let streakIncreased = false;
+    let streakProtectedByGrace = false;
+    let currentGraceAvailable = activeSpirit.grace_available;
+    let graceStateChanged = false;
 
     if (streak.last_completed_date) {
       const lastDate = new Date(streak.last_completed_date + 'T00:00:00Z');
@@ -385,19 +406,46 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
         // Consecutive day
         currentStreak += 1;
         streakIncreased = true;
+      } else if (diffDays === 2 && currentGraceAvailable && spiritStage >= 2) {
+        // Exactly 1 missed day (gap of 1 day) AND grace available AND Stage >= 2
+        // Preserve current_streak (treat it as if they completed yesterday) and consume grace
+        streakProtectedByGrace = true;
+        streakIncreased = false;
+        currentGraceAvailable = false;
+        graceStateChanged = true;
       } else {
-        // More than 1 day gap: reset streak to 1
+        // Gap of 2+ missed days, or 1 missed day without grace: reset streak to 1
         currentStreak = 1;
         streakIncreased = true;
+        // Refill grace back to true whenever current_streak resets to 1 after being broken
+        if (spiritStage >= 2 && !currentGraceAvailable) {
+          currentGraceAvailable = true;
+          graceStateChanged = true;
+        }
       }
     } else {
       // First completed quest ever
       currentStreak = 1;
       streakIncreased = true;
+      if (spiritStage >= 2 && !currentGraceAvailable) {
+        currentGraceAvailable = true;
+        graceStateChanged = true;
+      }
     }
 
     if (currentStreak > longestStreak) {
       longestStreak = currentStreak;
+    }
+
+    // Persist grace state changes if occurred
+    if (graceStateChanged) {
+      activeSpirit.fbState.grace_available = currentGraceAvailable;
+      try {
+        await client
+          .from('user_spirits')
+          .update({ grace_available: currentGraceAvailable })
+          .eq('user_id', userId);
+      } catch (_gErr) {}
     }
 
     // Update database records
@@ -486,9 +534,16 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
           }
 
           if (targetStage > currentStage) {
+            const spiritUpdatePayload = { current_stage: targetStage };
+            if (currentStage < 2 && targetStage >= 2) {
+              spiritUpdatePayload.grace_available = true;
+              currentGraceAvailable = true;
+              activeSpirit.fbState.grace_available = true;
+            }
+
             const { data: updatedSpirit, error: spiritUpdateErr } = await client
               .from('user_spirits')
-              .update({ current_stage: targetStage })
+              .update(spiritUpdatePayload)
               .eq('id', userSpirit.id)
               .select('*, species:spirit_species(*)')
               .single();
@@ -534,6 +589,12 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
           const dominantAttr = determineHighestAttribute(updatedCharacter);
           const spec = FALLBACK_SPECIES[dominantAttr];
           const stgs = FALLBACK_STAGES[dominantAttr];
+
+          if (targetStage >= 2) {
+            activeSpirit.fbState.grace_available = true;
+            currentGraceAvailable = true;
+          }
+
           spiritEvolution = {
             evolved: true,
             previousStage: prevStage,
@@ -597,11 +658,28 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
       leveledUp,
       levelsGained,
       streakIncreased,
+      streakProtectedByGrace,
+      graceAvailable: currentGraceAvailable,
+      spiritBonus: {
+        applied: isMatchingAttribute && spiritBonusXp > 0,
+        bonus_xp: spiritBonusXp,
+        multiplier: bonusMultiplier,
+        percentage: Math.round(bonusMultiplier * 100),
+        matching_attribute: activeAttr
+      },
       rewards: {
-        focus_points: quest.focus_points_reward,
+        focus_points: totalFocusPointsEarned,
+        base_focus_points: quest.focus_points_reward,
         cozy_coins: quest.cozy_coins_reward,
         attribute: quest.attribute_type,
-        attribute_increase: 1
+        attribute_increase: 1,
+        spirit_bonus: {
+          applied: isMatchingAttribute && spiritBonusXp > 0,
+          bonus_xp: spiritBonusXp,
+          multiplier: bonusMultiplier,
+          percentage: Math.round(bonusMultiplier * 100),
+          matching_attribute: activeAttr
+        }
       },
       newAchievements,
       newlyUnlockedRooms,

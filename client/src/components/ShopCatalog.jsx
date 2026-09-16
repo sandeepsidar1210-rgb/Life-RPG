@@ -33,8 +33,17 @@ const ITEM_ICONS = {
   'Celestial Horizon Badge': '✨'
 };
 
-export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasingId }) {
+export function ShopCatalog({
+  items,
+  inventory,
+  userCoins,
+  onPurchase,
+  purchasingId,
+  spiritStage = 1,
+  isStage3 = false
+}) {
   const [activeCategory, setActiveCategory] = useState('all');
+  const hasStage3Discount = isStage3 || spiritStage >= 3;
 
   const filteredItems = items.filter(item => {
     if (activeCategory === 'all') return true;
@@ -66,6 +75,26 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
           </span>
         </div>
       </div>
+
+      {/* Stage 3 Spirit Discount Banner */}
+      {hasStage3Discount && (
+        <div className="pixel-box bg-purple-50 p-3.5 sm:p-4 rounded-pixel border-2 border-purple-800 shadow-pixel-xs flex items-center justify-between gap-3 text-purple-900">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl select-none" role="img" aria-label="Sparkle">✨</span>
+            <div>
+              <div className="font-pixel text-xs sm:text-sm font-bold text-purple-950 flex items-center gap-1.5">
+                <span>Stage 3 Study Spirit Perk Active: 10% Emporium Discount!</span>
+              </div>
+              <p className="text-[11px] text-purple-800 leading-snug">
+                Your pinnacle celestial companion grants a permanent 10% price reduction across all furnishings and companions.
+              </p>
+            </div>
+          </div>
+          <span className="font-pixel text-[11px] sm:text-xs px-2.5 py-1 rounded bg-purple-200 border border-purple-400 text-purple-950 font-bold uppercase whitespace-nowrap shadow-sm">
+            10% OFF
+          </span>
+        </div>
+      )}
 
       {/* Category Filter Tabs */}
       <div 
@@ -113,7 +142,9 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
         >
           {filteredItems.map(item => {
           const isOwned = ownedItemIds.has(item.id);
-          const canAfford = userCoins >= item.cost;
+          const baseCost = item.cost || 0;
+          const effectiveCost = hasStage3Discount ? Math.max(1, Math.round(baseCost * 0.90)) : baseCost;
+          const canAfford = userCoins >= effectiveCost;
           const isPurchasing = purchasingId === item.id;
           const icon = ITEM_ICONS[item.name] || '🎁';
 
@@ -153,7 +184,19 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
               <div className="border-t border-cozy-border pt-3 mt-1 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1 font-pixel text-xs font-bold text-cozy-gold-dark">
                   <span aria-hidden="true">🪙</span>
-                  <span>{item.cost} Coins</span>
+                  {hasStage3Discount ? (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="line-through text-cozy-brown-medium opacity-60 text-[11px] font-normal" aria-label={`Original price: ${baseCost} coins`}>
+                        {baseCost}
+                      </span>
+                      <span className="text-purple-950 font-bold">{effectiveCost} Coins</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-purple-100 text-purple-800 font-bold border border-purple-300">
+                        -10%
+                      </span>
+                    </div>
+                  ) : (
+                    <span>{baseCost} Coins</span>
+                  )}
                 </div>
 
                 {isOwned ? (
@@ -170,8 +213,8 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
                     onClick={() => onPurchase(item)}
                     aria-label={
                       canAfford 
-                        ? `Purchase ${item.name} for ${item.cost} Cozy Coins` 
-                        : `Cannot afford ${item.name}. Costs ${item.cost} coins, you have ${userCoins} coins`
+                        ? `Purchase ${item.name} for ${effectiveCost} Cozy Coins${hasStage3Discount ? ' (10% discount applied)' : ''}` 
+                        : `Cannot afford ${item.name}. Costs ${effectiveCost} coins, you have ${userCoins} coins`
                     }
                     className={`touch-target pixel-box-interactive text-xs font-pixel font-bold px-3.5 py-2 rounded-pixel transition flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark ${
                       canAfford
@@ -184,7 +227,7 @@ export function ShopCatalog({ items, inventory, userCoins, onPurchase, purchasin
                     ) : canAfford ? (
                       <span>Adopt / Buy</span>
                     ) : (
-                      <span>Need {item.cost - userCoins}c</span>
+                      <span>Need {effectiveCost - userCoins}c</span>
                     )}
                   </button>
                 )}

@@ -273,6 +273,37 @@ export function SpiritPanel({
 
   const currentStageNum = currentStage?.stage_number || spiritData?.spirit?.current_stage || 1;
 
+  // Mechanical Perks & Dynamic Mood state derived from backend or scholar context
+  const currentMood =
+    spiritData?.mood ||
+    spiritData?.mood_details?.mood ||
+    (scholar?.streak?.current_streak > 0 ? 'Radiant' : 'Content');
+
+  const moodDetails = spiritData?.mood_details || {
+    mood: currentMood,
+    label: currentMood,
+    icon:
+      currentMood === 'Radiant'
+        ? '✨'
+        : currentMood === 'Drowsy'
+        ? '💤'
+        : currentMood === 'Fading'
+        ? '🕯️'
+        : '🌿',
+    description:
+      currentMood === 'Radiant'
+        ? "Radiating brilliant warmth from today's completed study quests!"
+        : currentMood === 'Drowsy'
+        ? 'Resting quietly after a missed day. Streak Guardian grace is standing by!'
+        : currentMood === 'Fading'
+        ? 'Light is dimming without daily study resonance. Complete a quest to rekindle!'
+        : "Calm and steady from yesterday's progress. Streak is safe!"
+  };
+
+  const graceAvailable =
+    spiritData?.grace_available ??
+    (spiritData?.spirit?.grace_available ?? (currentStageNum >= 2));
+
   // Selected stage for 3D inspection (defaults to active stage, but scholar can freely inspect Stage 1, 2, or 3)
   const [inspectedStageNum, setInspectedStageNum] = useState(currentStageNum);
 
@@ -449,6 +480,8 @@ export function SpiritPanel({
                       modelKey={activeInspectionModelKey}
                       isPreview={true}
                       onGreet={handleGreetSpirit}
+                      mood={currentMood}
+                      graceActive={scholar?.spiritGraceActive}
                     />
 
                     <OrbitControls
@@ -505,11 +538,28 @@ export function SpiritPanel({
                     )}
                   </AnimatePresence>
 
-                  {/* Top HUD: Current View Tag & Reset Camera */}
-                  <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
+                  {/* Top HUD: Current View Tag & Dynamic Mood Badge */}
+                  <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none flex-wrap">
                     <span className="px-2.5 py-1 bg-cozy-card/90 backdrop-blur-sm text-cozy-brown-dark text-[11px] font-pixel rounded border border-cozy-brown-light/60 shadow-pixel-sm flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-cozy-sage animate-ping" aria-hidden="true" />
                       <span>360° Spirit Inspection</span>
+                    </span>
+
+                    {/* Dynamic Mood Badge */}
+                    <span
+                      className={`px-2.5 py-1 rounded border shadow-pixel-sm font-pixel text-[11px] flex items-center gap-1.5 backdrop-blur-sm pointer-events-auto ${
+                        currentMood === 'Radiant'
+                          ? 'bg-amber-100/95 text-amber-900 border-amber-400'
+                          : currentMood === 'Drowsy'
+                          ? 'bg-indigo-100/95 text-indigo-900 border-indigo-300'
+                          : currentMood === 'Fading'
+                          ? 'bg-stone-200/95 text-stone-700 border-stone-400'
+                          : 'bg-emerald-100/95 text-emerald-900 border-emerald-300'
+                      }`}
+                      title={moodDetails.description}
+                    >
+                      <span aria-hidden="true">{moodDetails.icon}</span>
+                      <span>Mood: {moodDetails.label}</span>
                     </span>
                   </div>
 
@@ -676,8 +726,127 @@ export function SpiritPanel({
                 </div>
               </div>
 
-              {/* Right Column: Species Lore & Next Evolution Teaser */}
+              {/* Right Column: Species Lore, Mechanical Perks & Next Evolution Teaser */}
               <div className="lg:col-span-5 xl:col-span-5 space-y-4">
+                {/* Mechanical Benefits & Passive Perks Card */}
+                <div className="pixel-box bg-cozy-card p-5 rounded-pixel border-2 border-cozy-brown-dark shadow-pixel space-y-3.5">
+                  <div className="flex items-center justify-between gap-2 border-b border-cozy-border pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl" role="img" aria-label="Boon">⚡</span>
+                      <div>
+                        <h4 className="font-pixel text-sm font-bold text-cozy-brown-dark">
+                          Active Companion Perks
+                        </h4>
+                        <p className="text-[11px] text-cozy-brown-medium font-sans">
+                          Real mechanical benefits powering your progression
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-pixel px-2.5 py-1 rounded-full bg-cozy-terracotta text-white font-bold shadow-pixel-xs">
+                      Stage {currentStageNum} Tier
+                    </span>
+                  </div>
+
+                  {/* Active Bonus Tier Plain Summary */}
+                  <div className="p-3 rounded-pixel bg-cozy-parchment border-2 border-cozy-brown-dark/70">
+                    <div className="text-xs font-pixel font-bold text-cozy-terracotta-dark flex items-center gap-1.5 mb-1">
+                      <span>✨</span>
+                      <span>
+                        {currentStageNum === 1 && `Stage 1 — +10% Focus Points on matching ${species.attribute_type} quests`}
+                        {currentStageNum === 2 && `Stage 2 — +20% Focus Points on matching ${species.attribute_type} quests, Streak Guardian active`}
+                        {currentStageNum === 3 && `Stage 3 — +35% Focus Points on matching quests, Streak Guardian active, 10% Emporium discount active`}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-cozy-brown-medium leading-relaxed">
+                      {currentMood === 'Radiant' && 'Mood: Radiant ✨ — Brighter celestial glow, extra radiant motes, and vigorous flutter.'}
+                      {currentMood === 'Content' && 'Mood: Content 🌿 — Calm, harmonious glow and steady breathing.'}
+                      {currentMood === 'Drowsy' && 'Mood: Drowsy 💤 — Relaxed slower motion. Streak Guardian grace is standing by.'}
+                      {currentMood === 'Fading' && 'Mood: Fading 🕯️ — Dimmed light and slower idle animation. Complete a quest to rekindle!'}
+                    </p>
+                  </div>
+
+                  {/* 3 Core Mechanical Perks */}
+                  <div className="space-y-2 text-xs">
+                    {/* 1. Passive Attribute Bonus */}
+                    <div className="flex items-start gap-2.5 p-2.5 rounded bg-cozy-parchment/60 border border-cozy-border">
+                      <span className="text-base" aria-hidden="true">🎯</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-pixel font-bold text-cozy-brown-dark">
+                            Matching Quest Bonus
+                          </span>
+                          <span className="font-pixel text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold uppercase">
+                            +{currentStageNum === 3 ? '35%' : currentStageNum === 2 ? '20%' : '10%'} FP
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-cozy-brown-medium mt-0.5">
+                          Earns bonus Focus Points on quests matching your active {species.attribute_type} attunement.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 2. Streak Guardian (Grace Day) */}
+                    <div className="flex items-start gap-2.5 p-2.5 rounded bg-cozy-parchment/60 border border-cozy-border">
+                      <span className="text-base" aria-hidden="true">🛡️</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-pixel font-bold text-cozy-brown-dark">
+                            Streak Guardian
+                          </span>
+                          <span
+                            className={`font-pixel text-[10px] px-1.5 py-0.5 rounded border font-bold ${
+                              currentStageNum >= 2
+                                ? graceAvailable
+                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                  : 'bg-amber-100 text-amber-900 border-amber-300'
+                                : 'bg-stone-100 text-stone-600 border-stone-300'
+                            }`}
+                          >
+                            {currentStageNum >= 2
+                              ? graceAvailable
+                                ? 'Grace Charged'
+                                : 'Grace Used'
+                              : 'Unlocks Stage 2'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-cozy-brown-medium mt-0.5">
+                          {currentStageNum >= 2
+                            ? graceAvailable
+                              ? 'Shields your streak if you miss exactly 1 day. Preserves current streak and consumes grace.'
+                              : 'Grace saved your streak on a missed day! Recharges automatically after your next streak reset.'
+                            : 'Unlocks at Stage 2 (Level 5). Automatically prevents streak reset on 1 missed day.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 3. Emporium Shop Discount */}
+                    <div className="flex items-start gap-2.5 p-2.5 rounded bg-cozy-parchment/60 border border-cozy-border">
+                      <span className="text-base" aria-hidden="true">🏷️</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-pixel font-bold text-cozy-brown-dark">
+                            Emporium Discount
+                          </span>
+                          <span
+                            className={`font-pixel text-[10px] px-1.5 py-0.5 rounded border font-bold ${
+                              currentStageNum >= 3
+                                ? 'bg-purple-100 text-purple-900 border-purple-300'
+                                : 'bg-stone-100 text-stone-600 border-stone-300'
+                            }`}
+                          >
+                            {currentStageNum >= 3 ? '10% Off Active' : 'Unlocks Stage 3'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-cozy-brown-medium mt-0.5">
+                          {currentStageNum >= 3
+                            ? '10% discount on all items in the Cozy Study Emporium, visible with struck-through prices.'
+                            : 'Unlocks at Stage 3 (Level 12). Grants a 10% discount across all catalog furnishings & companions.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Next Evolution Teaser Card */}
                 <div
                   className={`pixel-box p-5 rounded-pixel border-2 border-cozy-brown-dark shadow-pixel relative overflow-hidden ${

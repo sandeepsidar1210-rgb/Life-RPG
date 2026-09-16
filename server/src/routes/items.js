@@ -2,6 +2,7 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
 import { checkAchievements } from '../utils/achievements.js';
+import { getActiveSpiritInfo } from './spirit.js';
 
 const router = express.Router();
 const getClient = () => supabaseAdmin || supabase;
@@ -34,7 +35,7 @@ router.get('/', async (req, res) => {
 /**
  * POST /api/items/:id/purchase
  * Protected: Purchase an item from the catalog
- * Verifies cozy_coins, deducts cost, inserts into inventory
+ * Verifies cozy_coins, deducts cost (with 10% Stage 3 Study Spirit discount if applicable), inserts into inventory
  */
 router.post('/:id/purchase', requireAuth, async (req, res) => {
   try {
@@ -72,21 +73,30 @@ router.post('/:id/purchase', requireAuth, async (req, res) => {
       });
     }
 
+    // 3. Check for Stage 3 Study Spirit 10% shop discount
+    const activeSpirit = await getActiveSpiritInfo(userId, client, character);
+    const isStage3 = activeSpirit.current_stage >= 3;
+    const baseCost = item.cost || 0;
+    const effectiveCost = isStage3
+      ? Math.max(1, Math.round(baseCost * 0.90))
+      : baseCost;
+
     const currentCoins = character.cozy_coins || 0;
-    const itemCost = item.cost || 0;
 
     // Reject with 400 if insufficient funds
-    if (currentCoins < itemCost) {
+    if (currentCoins < effectiveCost) {
       return res.status(400).json({
         error: 'Insufficient Funds',
-        message: `You need ${itemCost} Cozy Coins to purchase ${item.name}, but you only have ${currentCoins} Cozy Coins. Complete more quests to earn coins!`,
-        required: itemCost,
-        current: currentCoins
+        message: `You need ${effectiveCost} Cozy Coins to purchase ${item.name}, but you only have ${currentCoins} Cozy Coins. Complete more quests to earn coins!`,
+        required: effectiveCost,
+        current: currentCoins,
+        original_cost: baseCost,
+        discount_applied: isStage3
       });
     }
 
-    // 3. Deduct coins and insert into inventory
-    const newCoinBalance = currentCoins - itemCost;
+    // 4. Deduct coins and insert into inventory
+    const newCoinBalance = currentCoins - effectiveCost;
 
     const { data: updatedChar, error: updateCharErr } = await client
       .from('characters')
@@ -115,7 +125,15 @@ router.post('/:id/purchase', requireAuth, async (req, res) => {
 
     return res.status(200).json({
       message: `Successfully purchased ${item.name}!`,
-      item,
+      item: {
+        ...item,
+        purchased_cost: effectiveCost,
+        original_cost: baseCost,
+        discount_applied: isStage3
+      },
+      discount_applied: isStage3,
+      original_cost: baseCost,
+      final_cost: effectiveCost,
       inventory: inventoryEntry,
       character: updatedChar,
       newAchievements

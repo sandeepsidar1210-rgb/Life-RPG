@@ -1301,7 +1301,7 @@ const MODEL_MAP = {
  * with smooth acceleration, realistic turning/banking, inquisitive hovering pauses,
  * and an interactive joyful spin flip on click.
  */
-function RoamingSpiritCompanion({ Component, roomName, onGreet = null }) {
+function RoamingSpiritCompanion({ Component, roomName, onGreet = null, mood = 'Content', graceActive = false }) {
   const groupRef = useRef();
   const stateRef = useRef({
     wpIndex: 0,
@@ -1445,13 +1445,119 @@ function RoamingSpiritCompanion({ Component, roomName, onGreet = null }) {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <Component />
+      <SpiritMoodEffects mood={mood} graceActive={graceActive} />
     </group>
   );
 }
 
-function PreviewSpiritCompanion({ Component, onGreet }) {
+/**
+ * Ambient Visual FX for Dynamic Spirit Mood & Streak Guardian Grace Shield
+ */
+export function SpiritMoodEffects({ mood = 'Content', graceActive = false }) {
+  const shieldRef = useRef();
+  const ringRef = useRef();
+  const sparkleRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (shieldRef.current) {
+      const pulse = 1 + Math.sin(t * 3.5) * 0.06;
+      shieldRef.current.scale.set(pulse, pulse, pulse);
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.y = t * 1.6;
+      ringRef.current.rotation.z = Math.sin(t * 1.2) * 0.25;
+    }
+    if (mood === 'Radiant') {
+      sparkleRefs.forEach((ref, i) => {
+        if (!ref.current) return;
+        const angle = t * (2.4 + i * 0.3) + (i * Math.PI * 2) / 6;
+        const rad = 0.42 + (i % 3) * 0.08;
+        ref.current.position.x = Math.sin(angle) * rad;
+        ref.current.position.z = Math.cos(angle) * rad;
+        ref.current.position.y = 0.32 + Math.sin(t * 3.0 + i) * 0.16;
+      });
+    }
+  });
+
+  const lightColor =
+    mood === 'Radiant'
+      ? '#FCD34D'
+      : mood === 'Drowsy'
+      ? '#818CF8'
+      : mood === 'Fading'
+      ? '#78716C'
+      : '#FDE68A';
+
+  const lightIntensity =
+    mood === 'Radiant'
+      ? 2.2
+      : mood === 'Content'
+      ? 1.0
+      : mood === 'Drowsy'
+      ? 0.5
+      : 0.18;
+
+  return (
+    <group>
+      {/* Mood Center Point Light */}
+      <pointLight position={[0, 0.35, 0]} color={lightColor} intensity={lightIntensity} distance={3.2} decay={2} />
+
+      {/* Radiant Floating Celestial Sparkles */}
+      {mood === 'Radiant' && (
+        <group>
+          {sparkleRefs.map((ref, idx) => (
+            <mesh key={idx} ref={ref} position={[0, 0.35, 0]}>
+              <octahedronGeometry args={[0.035, 0]} />
+              <meshStandardMaterial color="#FEF08A" emissive="#F59E0B" emissiveIntensity={3.2} roughness={0.2} />
+            </mesh>
+          ))}
+        </group>
+      )}
+
+      {/* Streak Guardian Celestial Shield */}
+      {graceActive && (
+        <group position={[0, 0.35, 0]}>
+          <mesh ref={shieldRef}>
+            <sphereGeometry args={[0.55, 24, 20]} />
+            <meshStandardMaterial
+              color="#38BDF8"
+              emissive="#0284C7"
+              emissiveIntensity={2.0}
+              transparent
+              opacity={0.4}
+              roughness={0.1}
+            />
+          </mesh>
+          <mesh ref={ringRef} rotation={[Math.PI / 3, 0, 0]}>
+            <torusGeometry args={[0.65, 0.024, 12, 32]} />
+            <meshStandardMaterial
+              color="#BAE6FD"
+              emissive="#38BDF8"
+              emissiveIntensity={3.0}
+              transparent
+              opacity={0.8}
+            />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+}
+
+function PreviewSpiritCompanion({ Component, onGreet, mood = 'Content', graceActive = false }) {
   const groupRef = useRef();
+  const innerRef = useRef();
   const spinRef = useRef(0);
+
+  const speed =
+    mood === 'Radiant'
+      ? 1.25
+      : mood === 'Fading'
+      ? 0.55
+      : mood === 'Drowsy'
+      ? 0.75
+      : 1.0;
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -1465,6 +1571,13 @@ function PreviewSpiritCompanion({ Component, onGreet }) {
     } else if (groupRef.current.scale.x !== 1) {
       groupRef.current.scale.set(1, 1, 1);
       groupRef.current.position.y = -0.3;
+    }
+
+    // Idle bobbing modulated by mood speed
+    if (innerRef.current) {
+      const t = performance.now() * 0.001 * speed;
+      const bobAmount = mood === 'Radiant' ? 0.035 : mood === 'Fading' ? 0.012 : 0.022;
+      innerRef.current.position.y = Math.sin(t * 2.5) * bobAmount;
     }
   });
 
@@ -1491,7 +1604,10 @@ function PreviewSpiritCompanion({ Component, onGreet }) {
         <boxGeometry args={[0.9, 0.9, 0.9]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <Component />
+      <group ref={innerRef}>
+        <Component />
+        <SpiritMoodEffects mood={mood} graceActive={graceActive} />
+      </group>
     </group>
   );
 }
@@ -1505,17 +1621,19 @@ export function SpiritCompanion({
   modelKey = 'emberwisp_stage_1',
   roomName = 'Study Desk',
   isPreview = false,
-  onGreet = null
+  onGreet = null,
+  mood = 'Content',
+  graceActive = false
 }) {
   const Component = MODEL_MAP[modelKey] || EmberwispSpark;
 
   // In dedicated inspection preview (SpiritPanel / Evolution Modal), center at [0, 0, 0]
   if (isPreview) {
-    return <PreviewSpiritCompanion Component={Component} onGreet={onGreet} />;
+    return <PreviewSpiritCompanion Component={Component} onGreet={onGreet} mood={mood} graceActive={graceActive} />;
   }
 
   // Autonomous free-roaming flight companion inside 3D Sanctuary rooms
-  return <RoamingSpiritCompanion Component={Component} roomName={roomName} onGreet={onGreet} />;
+  return <RoamingSpiritCompanion Component={Component} roomName={roomName} onGreet={onGreet} mood={mood} graceActive={graceActive} />;
 }
 
 export default SpiritCompanion;

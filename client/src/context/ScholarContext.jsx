@@ -19,6 +19,7 @@ export function ScholarProvider({ children }) {
   const [menagerie, setMenagerie] = useState([]);
   const [activeGreeting, setActiveGreeting] = useState(null);
   const [spiritGreetingPending, setSpiritGreetingPending] = useState(false);
+  const [spiritGraceActive, setSpiritGraceActive] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Interaction Loading States
@@ -429,10 +430,19 @@ export function ScholarProvider({ children }) {
         playSound('quest_complete');
       }
 
-      addToast(
-        `Quest completed! +${data.rewards.focus_points} Focus Points, +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
-        'success'
-      );
+      // Distinct spirit bonus reward toast feedback
+      const spiritBonus = data.rewards?.spirit_bonus || data.spiritBonus;
+      if (spiritBonus?.applied && spiritBonus.bonus_xp > 0) {
+        addToast(
+          `✨ Quest completed! +${data.rewards.focus_points} Focus Points (+${spiritBonus.percentage}% Spirit Bonus: +${spiritBonus.bonus_xp} FP!), +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
+          'success'
+        );
+      } else {
+        addToast(
+          `Quest completed! +${data.rewards.focus_points} Focus Points, +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
+          'success'
+        );
+      }
 
       if (data.leveledUp) {
         setCelebrationData({
@@ -443,8 +453,21 @@ export function ScholarProvider({ children }) {
         setShowCelebration(true);
       }
 
-      if (data.streakIncreased) {
+      // Streak Guardian vs Normal Streak continuation
+      if (data.streakProtectedByGrace) {
+        addToast(
+          `🛡️ Your Spirit protected your streak! Preserved at ${data.streak.current_streak} days.`,
+          'info'
+        );
+        setSpiritGraceActive(true);
+        setTimeout(() => setSpiritGraceActive(false), 4500);
+      } else if (data.streakIncreased) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
+      }
+
+      // Sync grace availability state in spirit
+      if (typeof data.graceAvailable === 'boolean') {
+        setSpirit((prev) => (prev ? { ...prev, grace_available: data.graceAvailable } : prev));
       }
 
       // Spirit Evolution handling
@@ -873,6 +896,8 @@ export function ScholarProvider({ children }) {
         handleSwitchActiveSpirit,
         handleGreetSpirit,
         dismissGreetingBubble,
+        spiritGraceActive,
+        setSpiritGraceActive,
         fetchMenagerie,
         refreshData: loadDashboardData,
         // Celebrations

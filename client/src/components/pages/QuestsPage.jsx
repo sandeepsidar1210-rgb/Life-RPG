@@ -9,7 +9,8 @@ export function QuestsPage() {
     handleCreateQuest,
     handleEditQuest,
     handleDeleteQuest,
-    completingId
+    completingId,
+    spirit
   } = useScholar();
 
   return (
@@ -21,6 +22,7 @@ export function QuestsPage() {
         onEdit={handleEditQuest}
         onDelete={handleDeleteQuest}
         completingId={completingId}
+        spirit={spirit}
       />
     </div>
   );

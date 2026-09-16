@@ -8,8 +8,14 @@ export function ShopPage() {
     inventory,
     character,
     handlePurchaseItem,
-    purchasingId
+    purchasingId,
+    spirit
   } = useScholar();
+
+  const spiritStage =
+    spirit?.current_stage?.stage_number ||
+    spirit?.spirit?.current_stage ||
+    (character?.level >= 12 ? 3 : character?.level >= 5 ? 2 : 1);
 
   return (
     <div className="space-y-4">
@@ -19,6 +25,8 @@ export function ShopPage() {
         userCoins={character.cozy_coins}
         onPurchase={handlePurchaseItem}
         purchasingId={purchasingId}
+        spiritStage={spiritStage}
+        isStage3={spiritStage >= 3}
       />
     </div>
   );

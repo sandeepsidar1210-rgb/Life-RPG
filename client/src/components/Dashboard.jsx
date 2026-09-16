@@ -375,10 +375,18 @@ export function Dashboard({ defaultTab = 'quests' }) {
         streak: data.streak
       }));
 
-      addToast(
-        `Quest completed! +${data.rewards.focus_points} Focus Points, +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
-        'success'
-      );
+      const spiritBonus = data.rewards?.spirit_bonus || data.spiritBonus;
+      if (spiritBonus?.applied && spiritBonus.bonus_xp > 0) {
+        addToast(
+          `✨ Quest completed! +${data.rewards.focus_points} Focus Points (+${spiritBonus.percentage}% Spirit Bonus: +${spiritBonus.bonus_xp} FP!), +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
+          'success'
+        );
+      } else {
+        addToast(
+          `Quest completed! +${data.rewards.focus_points} Focus Points, +${data.rewards.cozy_coins} Coins, +1 ${data.rewards.attribute.toUpperCase()}`,
+          'success'
+        );
+      }
 
       if (data.leveledUp) {
         setCelebrationData({
@@ -389,7 +397,12 @@ export function Dashboard({ defaultTab = 'quests' }) {
         setShowCelebration(true);
       }
 
-      if (data.streakIncreased) {
+      if (data.streakProtectedByGrace) {
+        addToast(
+          `🛡️ Your Spirit protected your streak! Preserved at ${data.streak.current_streak} days.`,
+          'info'
+        );
+      } else if (data.streakIncreased) {
         addToast(`🔥 Day Streak increased to ${data.streak.current_streak}!`, 'success');
       }
 

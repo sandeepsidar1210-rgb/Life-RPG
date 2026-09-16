@@ -94,6 +94,15 @@ export const FALLBACK_STAGES = {
   ]
 };
 
+// Bonus multipliers and shop discounts by stage
+export const SPIRIT_BONUS_MULTIPLIERS = {
+  1: 0.10, // Stage 1: +10% Focus Points on matching attribute quests
+  2: 0.20, // Stage 2: +20% Focus Points on matching attribute quests
+  3: 0.35  // Stage 3: +35% Focus Points on matching attribute quests
+};
+
+export const SHOP_DISCOUNT_PERCENT = 10; // Stage 3: 10% discount in Cozy Emporium
+
 // In-memory runtime cache for fallback resilience (user-specific spirit state)
 export const fallbackSpiritState = new Map();
 
@@ -103,10 +112,154 @@ export function getOrCreateFallbackState(userId, dominantAttr = 'focus') {
       original_species: dominantAttr,
       active_species: dominantAttr,
       unlocked_species: new Set([dominantAttr]),
-      last_greeted_at: null
+      last_greeted_at: null,
+      grace_available: null
     });
   }
   return fallbackSpiritState.get(userId);
+}
+
+/**
+ * Derive dynamic mood state from last quest completion date:
+ * - "Radiant": completed today (0 days)
+ * - "Content": completed yesterday, streak still safe (1 day)
+ * - "Drowsy": 1 day since deadline, grace available and about to be needed (2 days with grace)
+ * - "Fading": streak about to break / already broken and no grace left (2+ days without grace, or 3+ days)
+ */
+export function computeSpiritMood(lastCompletedDate, graceAvailable = false, currentStage = 1) {
+  if (!lastCompletedDate) {
+    return {
+      mood: 'Content',
+      state: 'Content',
+      label: 'Content',
+      icon: '🌿',
+      description: 'Patient and serene, waiting to embark on your study journey.',
+      hours_since_completion: null,
+      diff_days: null
+    };
+  }
+
+  const todayUTC = new Date().toISOString().slice(0, 10);
+  const lastDate = new Date(lastCompletedDate.slice(0, 10) + 'T00:00:00Z');
+  const nowDate = new Date(todayUTC + 'T00:00:00Z');
+  const diffDays = Math.round((nowDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+  const hoursSince = Math.floor(Math.max(0, Date.now() - lastDate.getTime()) / (1000 * 60 * 60));
+
+  let moodState = 'Content';
+  let moodIcon = '🌿';
+  let moodDesc = 'Calm and steady from yesterday\'s progress. Streak is safe!';
+
+  if (diffDays <= 0) {
+    moodState = 'Radiant';
+    moodIcon = '✨';
+    moodDesc = 'Radiating brilliant warmth from today\'s completed study sprints!';
+  } else if (diffDays === 1) {
+    moodState = 'Content';
+    moodIcon = '🌿';
+    moodDesc = 'Calm and steady from yesterday\'s progress. Streak is safe!';
+  } else if (diffDays === 2 && graceAvailable && currentStage >= 2) {
+    moodState = 'Drowsy';
+    moodIcon = '💤';
+    moodDesc = 'Resting quietly after a missed day. Streak Guardian grace is ready to shield you!';
+  } else {
+    moodState = 'Fading';
+    moodIcon = '🕯️';
+    moodDesc = 'Light is dimming without daily study resonance. Complete a quest to rekindle!';
+  }
+
+  return {
+    mood: moodState,
+    state: moodState,
+    label: moodState,
+    icon: moodIcon,
+    description: moodDesc,
+    hours_since_completion: hoursSince,
+    diff_days: diffDays
+  };
+}
+
+/**
+ * Shared helper to fetch complete active spirit information for a user.
+ */
+export async function getActiveSpiritInfo(userId, client = null, character = null) {
+  if (!client) client = getClient();
+  if (!character) {
+    try {
+      const { data: charData } = await client
+        .from('characters')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      character = charData;
+    } catch (_e) {}
+  }
+
+  const userLevel = character?.level || 1;
+  const dominantAttr = determineHighestAttribute(character);
+  const fbState = getOrCreateFallbackState(userId, dominantAttr);
+
+  let userSpirit = null;
+  let speciesData = null;
+
+  try {
+    const { data: existingSpirit } = await client
+      .from('user_spirits')
+      .select('*, species:spirit_species(*), active_species:spirit_species!user_spirits_active_species_id_fkey(*)')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existingSpirit) {
+      userSpirit = existingSpirit;
+      speciesData = existingSpirit.active_species || existingSpirit.species;
+    }
+  } catch (_e) {
+    try {
+      const { data: simpleSpirit } = await client
+        .from('user_spirits')
+        .select('*, species:spirit_species(*)')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (simpleSpirit) {
+        userSpirit = simpleSpirit;
+        speciesData = simpleSpirit.species;
+      }
+    } catch (_inner) {}
+  }
+
+  const activeAttr = speciesData?.attribute_type || fbState.active_species || dominantAttr;
+  const finalSpecies = {
+    ...FALLBACK_SPECIES[activeAttr],
+    ...(speciesData || {})
+  };
+
+  const currentStageNum = userSpirit?.current_stage || getStageFromLevel(userLevel);
+
+  let graceAvailable = false;
+  if (currentStageNum >= 2) {
+    if (userSpirit && typeof userSpirit.grace_available === 'boolean') {
+      graceAvailable = userSpirit.grace_available;
+    } else if (typeof fbState.grace_available === 'boolean') {
+      graceAvailable = fbState.grace_available;
+    } else {
+      graceAvailable = true;
+    }
+  } else {
+    graceAvailable = false;
+  }
+
+  const bonusMultiplier = SPIRIT_BONUS_MULTIPLIERS[currentStageNum] || 0.10;
+  const hasShopDiscount = currentStageNum >= 3;
+
+  return {
+    userSpirit,
+    species: finalSpecies,
+    attribute_type: activeAttr,
+    current_stage: currentStageNum,
+    grace_available: graceAvailable,
+    bonus_multiplier: bonusMultiplier,
+    has_shop_discount: hasShopDiscount,
+    fbState
+  };
 }
 
 /**
@@ -215,16 +368,33 @@ router.get('/', requireAuth, async (req, res) => {
 
         if (speciesRow) {
           const startingStage = getStageFromLevel(userLevel);
-          const { data: newSpirit } = await client
-            .from('user_spirits')
-            .insert({
-              user_id: userId,
-              species_id: speciesRow.id,
-              active_species_id: speciesRow.id,
-              current_stage: startingStage
-            })
-            .select('*, species:spirit_species(*)')
-            .single();
+          let newSpirit = null;
+          try {
+            const { data: createdSpirit } = await client
+              .from('user_spirits')
+              .insert({
+                user_id: userId,
+                species_id: speciesRow.id,
+                active_species_id: speciesRow.id,
+                current_stage: startingStage,
+                grace_available: startingStage >= 2
+              })
+              .select('*, species:spirit_species(*)')
+              .single();
+            newSpirit = createdSpirit;
+          } catch (_colErr) {
+            const { data: fallbackCreated } = await client
+              .from('user_spirits')
+              .insert({
+                user_id: userId,
+                species_id: speciesRow.id,
+                active_species_id: speciesRow.id,
+                current_stage: startingStage
+              })
+              .select('*, species:spirit_species(*)')
+              .single();
+            newSpirit = fallbackCreated;
+          }
 
           if (newSpirit) {
             userSpirit = newSpirit;
@@ -267,7 +437,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     const finalStages = stagesData.length > 0 ? stagesData : FALLBACK_STAGES[activeAttr];
-    const currentStageNum = getStageFromLevel(userLevel);
+    const currentStageNum = userSpirit?.current_stage || getStageFromLevel(userLevel);
     const currentStage = finalStages.find((s) => s.stage_number === currentStageNum) || finalStages[0];
     const nextStage = finalStages.find((s) => s.stage_number === currentStageNum + 1) || null;
 
@@ -288,12 +458,42 @@ router.get('/', requireAuth, async (req, res) => {
       }
     }
 
+    // 5. Fetch user's streak for dynamic mood evaluation
+    let streak = null;
+    try {
+      const { data: sData } = await client
+        .from('streaks')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      streak = sData;
+    } catch (_stErr) {}
+
+    // Grace day status: true if Stage >= 2, false if Stage 1
+    let graceAvailable = false;
+    if (currentStageNum >= 2) {
+      if (userSpirit && typeof userSpirit.grace_available === 'boolean') {
+        graceAvailable = userSpirit.grace_available;
+      } else if (typeof fbState.grace_available === 'boolean') {
+        graceAvailable = fbState.grace_available;
+      } else {
+        graceAvailable = true;
+      }
+    } else {
+      graceAvailable = false;
+    }
+
+    // Derive dynamic mood
+    const moodInfo = computeSpiritMood(streak?.last_completed_date, graceAvailable, currentStageNum);
+    const bonusMultiplier = SPIRIT_BONUS_MULTIPLIERS[currentStageNum] || 0.10;
+
     return res.status(200).json({
       spirit: {
         id: userSpirit?.id || 'spirit-bound',
         species_id: userSpirit?.species_id || finalSpecies.id,
         active_species_id: userSpirit?.active_species_id || finalSpecies.id,
         current_stage: currentStageNum,
+        grace_available: graceAvailable,
         adopted_at: userSpirit?.adopted_at || new Date().toISOString(),
         last_greeted_at: lastGreetedAt
       },
@@ -301,6 +501,33 @@ router.get('/', requireAuth, async (req, res) => {
       current_stage: currentStage,
       next_stage: nextStageTeaser,
       is_max_stage: currentStageNum >= 3,
+      mood: moodInfo.mood,
+      mood_details: moodInfo,
+      grace_available: graceAvailable,
+      bonus_multiplier: bonusMultiplier,
+      bonus_tier: {
+        stage: currentStageNum,
+        multiplier: bonusMultiplier,
+        percentage: Math.round(bonusMultiplier * 100),
+        matching_attribute: activeAttr,
+        streak_guardian_active: currentStageNum >= 2,
+        grace_available: graceAvailable,
+        shop_discount_active: currentStageNum >= 3,
+        shop_discount_percent: currentStageNum >= 3 ? SHOP_DISCOUNT_PERCENT : 0,
+        description: currentStageNum === 1
+          ? `Stage 1 — +10% Focus Points on matching ${activeAttr} quests`
+          : currentStageNum === 2
+          ? `Stage 2 — +20% Focus Points on matching quests, Streak Guardian active`
+          : `Stage 3 — +35% Focus Points on matching quests, Streak Guardian active, 10% Emporium discount`
+      },
+      passive_perks: {
+        attribute_bonus_percent: Math.round(bonusMultiplier * 100),
+        matching_attribute: activeAttr,
+        streak_guardian_active: currentStageNum >= 2,
+        grace_available: graceAvailable,
+        shop_discount_active: currentStageNum >= 3,
+        shop_discount_percent: currentStageNum >= 3 ? SHOP_DISCOUNT_PERCENT : 0
+      },
       all_stages: finalStages.map((s) => ({
         ...s,
         is_unlocked: userLevel >= s.unlock_level,
