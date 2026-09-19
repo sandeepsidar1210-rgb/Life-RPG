@@ -481,7 +481,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
   };
 
   // 6. Equip / Unequip Item (with Optimistic UI and rollback)
-  const handleToggleEquip = async (inventoryId, targetRoomId, targetEquippedOverride) => {
+  const handleToggleEquip = async (inventoryId, targetRoomId, targetEquippedOverride, coordinates = null) => {
     if (equippingId) return;
     setEquippingId(inventoryId);
 
@@ -501,11 +501,22 @@ export function Dashboard({ defaultTab = 'quests' }) {
     const category = targetItem?.item?.category;
     const effectiveRoomId = targetEquipped ? (targetRoomId || activeRoom?.id) : null;
 
+    const posX = coordinates?.position_x !== undefined ? Number(coordinates.position_x) : null;
+    const posY = coordinates?.position_y !== undefined ? Number(coordinates.position_y) : 0;
+    const posZ = coordinates?.position_z !== undefined ? Number(coordinates.position_z) : null;
+    const rotY = coordinates?.rotation_y !== undefined ? Number(coordinates.rotation_y) : 0;
+    const surf = coordinates?.surface !== undefined ? String(coordinates.surface) : 'floor';
+
     // Optimistic UI update
     setInventory((prev) =>
       prev.map((inv) => {
         if (inv.id === inventoryId) {
-          return { ...inv, equipped: targetEquipped, room_id: effectiveRoomId };
+          return {
+            ...inv,
+            equipped: targetEquipped,
+            room_id: effectiveRoomId,
+            ...(targetEquipped && posX !== null ? { position_x: posX, position_y: posY, position_z: posZ, rotation_y: rotY, surface: surf } : {})
+          };
         }
         // Auto-unequip other companions if equipping a companion
         if (targetEquipped && category === 'companion' && inv.item?.category === 'companion') {
@@ -516,16 +527,25 @@ export function Dashboard({ defaultTab = 'quests' }) {
     );
 
     try {
+      const payload = {
+        equipped: targetEquipped,
+        room_id: effectiveRoomId
+      };
+      if (targetEquipped && posX !== null && posZ !== null) {
+        payload.position_x = posX;
+        payload.position_y = posY;
+        payload.position_z = posZ;
+        payload.rotation_y = rotY;
+        payload.surface = surf;
+      }
+
       const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/equip`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          equipped: targetEquipped,
-          room_id: effectiveRoomId
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -549,6 +569,47 @@ export function Dashboard({ defaultTab = 'quests' }) {
       addToast(getFriendlyErrorMessage(err), 'error');
     } finally {
       setEquippingId(null);
+    }
+  };
+
+  const handleUpdateItemPosition = async (inventoryId, { position_x, position_y = 0, position_z, rotation_y = 0, surface = 'floor' }) => {
+    const item = inventory.find((inv) => inv.id === inventoryId);
+    if (!item) return;
+
+    const previousInventory = [...inventory];
+    setInventory((prev) =>
+      prev.map((inv) =>
+        inv.id === inventoryId
+          ? { ...inv, position_x, position_y, position_z, rotation_y, surface }
+          : inv
+      )
+    );
+
+    try {
+      const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/position`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          position_x,
+          position_y,
+          position_z,
+          rotation_y,
+          surface
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to reposition item');
+      if (data.inventory) {
+        setInventory((prev) =>
+          prev.map((inv) => (inv.id === inventoryId ? { ...inv, ...data.inventory } : inv))
+        );
+      }
+    } catch (err) {
+      setInventory(previousInventory);
+      addToast(getFriendlyErrorMessage(err), 'error');
     }
   };
 
@@ -913,6 +974,7 @@ export function Dashboard({ defaultTab = 'quests' }) {
                 onSelectRoom={handleSelectRoom}
                 userLevel={char.level}
                 onToggleEquip={handleToggleEquip}
+                onUpdateItemPosition={handleUpdateItemPosition}
                 equippingId={equippingId}
                 onNavigateToShop={() => handleTabSwitch('shop')}
               />

@@ -1,12 +1,10 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
+import positionStore from '../utils/positionStore.js';
 
 const router = express.Router();
 const getClient = () => supabaseAdmin || supabase;
-
-// In-memory runtime cache for item coordinates to guarantee seamless fallback persistence
-const itemPositionsCache = new Map();
 
 /**
  * GET /api/inventory
@@ -25,18 +23,8 @@ router.get('/', requireAuth, async (req, res) => {
 
     if (error) throw error;
 
-    // Augment with cached coordinates if not in database
-    const augmentedInventory = (inventory || []).map((inv) => {
-      const cached = itemPositionsCache.get(inv.id);
-      return {
-        ...inv,
-        position_x: inv.position_x !== undefined && inv.position_x !== null ? inv.position_x : (cached?.position_x ?? null),
-        position_y: inv.position_y !== undefined && inv.position_y !== null ? inv.position_y : (cached?.position_y ?? 0),
-        position_z: inv.position_z !== undefined && inv.position_z !== null ? inv.position_z : (cached?.position_z ?? null),
-        rotation_y: inv.rotation_y !== undefined && inv.rotation_y !== null ? inv.rotation_y : (cached?.rotation_y ?? 0),
-        surface: inv.surface !== undefined && inv.surface !== null ? inv.surface : (cached?.surface ?? 'floor')
-      };
-    });
+    // Augment with persistent coordinates (from database or disk-persisted coordinate store)
+    const augmentedInventory = positionStore.augmentList(inventory || []);
 
     return res.status(200).json({
       inventory: augmentedInventory
@@ -179,9 +167,14 @@ router.patch('/:id/equip', requireAuth, async (req, res) => {
     const surf = req.body?.surface !== undefined ? String(req.body.surface) : 'floor';
 
     if (targetEquipped && posX !== null && posZ !== null) {
-      itemPositionsCache.set(inventoryId, { position_x: posX, position_y: posY, position_z: posZ, rotation_y: rotY, surface: surf });
-    } else if (!targetEquipped) {
-      itemPositionsCache.delete(inventoryId);
+      positionStore.setPosition(inventoryId, {
+        position_x: posX,
+        position_y: posY,
+        position_z: posZ,
+        rotation_y: rotY,
+        surface: surf,
+        user_id: userId
+      });
     }
 
     const basePayload = targetEquipped
@@ -231,16 +224,8 @@ router.patch('/:id/equip', requireAuth, async (req, res) => {
       }
     }
 
-    // Attach coordinates to response
-    const cached = itemPositionsCache.get(inventoryId);
-    updatedEntry = {
-      ...updatedEntry,
-      position_x: updatedEntry.position_x !== undefined && updatedEntry.position_x !== null ? updatedEntry.position_x : (cached?.position_x ?? null),
-      position_y: updatedEntry.position_y !== undefined && updatedEntry.position_y !== null ? updatedEntry.position_y : (cached?.position_y ?? 0),
-      position_z: updatedEntry.position_z !== undefined && updatedEntry.position_z !== null ? updatedEntry.position_z : (cached?.position_z ?? null),
-      rotation_y: updatedEntry.rotation_y !== undefined && updatedEntry.rotation_y !== null ? updatedEntry.rotation_y : (cached?.rotation_y ?? 0),
-      surface: updatedEntry.surface !== undefined && updatedEntry.surface !== null ? updatedEntry.surface : (cached?.surface ?? 'floor')
-    };
+    // Attach persistent coordinates to response
+    updatedEntry = positionStore.augmentItem(updatedEntry || { id: inventoryId });
 
     const roomName = updatedEntry.room?.name || 'room';
     const message = targetEquipped
@@ -289,8 +274,15 @@ router.patch('/:id/position', requireAuth, async (req, res) => {
     const rotY = rotation_y !== undefined ? Number(rotation_y) : 0;
     const surf = surface !== undefined ? String(surface) : 'floor';
 
-    // Cache immediately in memory
-    itemPositionsCache.set(inventoryId, { position_x: posX, position_y: posY, position_z: posZ, rotation_y: rotY, surface: surf });
+    // Persist immediately in disk-backed store
+    positionStore.setPosition(inventoryId, {
+      position_x: posX,
+      position_y: posY,
+      position_z: posZ,
+      rotation_y: rotY,
+      surface: surf,
+      user_id: userId
+    });
 
     // Try updating database
     try {
@@ -319,18 +311,12 @@ router.patch('/:id/position', requireAuth, async (req, res) => {
       .eq('user_id', userId)
       .maybeSingle();
 
+    const finalEntry = positionStore.augmentItem(updatedEntry || { id: inventoryId });
+
     return res.status(200).json({
       success: true,
       message: 'Item repositioned successfully.',
-      inventory: {
-        ...(updatedEntry || {}),
-        id: inventoryId,
-        position_x: posX,
-        position_y: posY,
-        position_z: posZ,
-        rotation_y: rotY,
-        surface: surf
-      }
+      inventory: finalEntry
     });
   } catch (err) {
     console.error('[Reposition Item Error]', err);

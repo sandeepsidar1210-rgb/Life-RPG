@@ -5,6 +5,86 @@ import { playSfx } from '../utils/audio.js';
 const ScholarContext = createContext(null);
 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const COORDS_STORAGE_KEY = 'life_rpg_item_coordinates';
+
+function getLocalItemCoordinates() {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(COORDS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalItemCoordinate(inventoryId, coords) {
+  if (typeof window === 'undefined' || !inventoryId) return;
+  try {
+    const all = getLocalItemCoordinates();
+    all[inventoryId] = {
+      ...all[inventoryId],
+      ...coords,
+      updated_at: Date.now()
+    };
+    localStorage.setItem(COORDS_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+function saveLocalItemCoordinatesBatch(itemsList = []) {
+  if (typeof window === 'undefined' || !Array.isArray(itemsList)) return;
+  try {
+    const all = getLocalItemCoordinates();
+    let changed = false;
+    for (const item of itemsList) {
+      if (item && item.id && item.position_x !== null && item.position_x !== undefined) {
+        all[item.id] = {
+          position_x: Number(item.position_x),
+          position_y: item.position_y !== null && item.position_y !== undefined ? Number(item.position_y) : 0,
+          position_z: Number(item.position_z),
+          rotation_y: item.rotation_y !== null && item.rotation_y !== undefined ? Number(item.rotation_y) : 0,
+          surface: item.surface || 'floor',
+          updated_at: Date.now()
+        };
+        changed = true;
+      }
+    }
+    if (changed) {
+      localStorage.setItem(COORDS_STORAGE_KEY, JSON.stringify(all));
+    }
+  } catch {}
+}
+
+function mergeWithLocalCoordinates(inventoryList = []) {
+  const localMap = getLocalItemCoordinates();
+  return (inventoryList || []).map((inv) => {
+    const local = localMap[inv.id];
+    const posX = inv.position_x !== null && inv.position_x !== undefined 
+      ? Number(inv.position_x) 
+      : (local?.position_x !== undefined && local?.position_x !== null ? Number(local.position_x) : null);
+    const posY = inv.position_y !== null && inv.position_y !== undefined 
+      ? Number(inv.position_y) 
+      : (local?.position_y !== undefined && local?.position_y !== null ? Number(local.position_y) : 0);
+    const posZ = inv.position_z !== null && inv.position_z !== undefined 
+      ? Number(inv.position_z) 
+      : (local?.position_z !== undefined && local?.position_z !== null ? Number(local.position_z) : null);
+    const rotY = inv.rotation_y !== null && inv.rotation_y !== undefined 
+      ? Number(inv.rotation_y) 
+      : (local?.rotation_y !== undefined && local?.rotation_y !== null ? Number(local.rotation_y) : 0);
+    const surf = inv.surface !== null && inv.surface !== undefined 
+      ? String(inv.surface) 
+      : (local?.surface || 'floor');
+
+    return {
+      ...inv,
+      position_x: posX,
+      position_y: posY,
+      position_z: posZ,
+      rotation_y: rotY,
+      surface: surf
+    };
+  });
+}
+
 export function ScholarProvider({ children }) {
   const { user, token, signOut } = useAuth();
 
@@ -204,7 +284,11 @@ export function ScholarProvider({ children }) {
       setProfile(meData);
       setQuests(questsData.quests || []);
       setItems(itemsData.items || []);
-      setInventory(invData.inventory || meData.inventory || []);
+
+      const rawInv = invData.inventory || meData.inventory || [];
+      const resolvedInventory = mergeWithLocalCoordinates(rawInv);
+      saveLocalItemCoordinatesBatch(resolvedInventory);
+      setInventory(resolvedInventory);
 
       if (spiritData) {
         setSpirit(spiritData);
@@ -613,6 +697,16 @@ export function ScholarProvider({ children }) {
         payload.surface = surf;
       }
 
+      if (newEquipped && posX !== null && posZ !== null) {
+        saveLocalItemCoordinate(inventoryId, {
+          position_x: posX,
+          position_y: posY,
+          position_z: posZ,
+          rotation_y: rotY,
+          surface: surf
+        });
+      }
+
       const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/equip`, {
         method: 'PATCH',
         headers: {
@@ -624,6 +718,10 @@ export function ScholarProvider({ children }) {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to update item placement');
+
+      if (data.inventory && data.inventory.position_x !== null && data.inventory.position_x !== undefined) {
+        saveLocalItemCoordinate(inventoryId, data.inventory);
+      }
 
       setInventory((prev) =>
         prev.map((inv) => {
@@ -669,6 +767,15 @@ export function ScholarProvider({ children }) {
       )
     );
 
+    // Immediately cache in localStorage for instant persistent feedback
+    saveLocalItemCoordinate(inventoryId, {
+      position_x,
+      position_y,
+      position_z,
+      rotation_y,
+      surface
+    });
+
     try {
       const res = await fetch(`${apiUrl}/api/inventory/${inventoryId}/position`, {
         method: 'PATCH',
@@ -689,6 +796,7 @@ export function ScholarProvider({ children }) {
       if (!res.ok) throw new Error(data.message || 'Failed to reposition item');
 
       if (data.inventory) {
+        saveLocalItemCoordinate(inventoryId, data.inventory);
         setInventory((prev) =>
           prev.map((inv) => (inv.id === inventoryId ? { ...inv, ...data.inventory } : inv))
         );

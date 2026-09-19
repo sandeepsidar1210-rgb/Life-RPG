@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin, supabase } from '../supabase.js';
+import positionStore from '../utils/positionStore.js';
 
 const router = express.Router();
 
@@ -95,7 +96,7 @@ router.get('/me', requireAuth, async (req, res) => {
       },
       character,
       streak,
-      inventory: inventory || [],
+      inventory: positionStore.augmentList(inventory || []),
       spirit
     });
 

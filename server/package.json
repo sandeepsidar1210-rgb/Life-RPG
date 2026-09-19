@@ -8,6 +8,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "db:migrate": "node src/migrate.js",
+    "db:migrate:coords": "node src/migrate-coords.js",
     "db:verify": "node src/verify-db.js"
   },
   "dependencies": {

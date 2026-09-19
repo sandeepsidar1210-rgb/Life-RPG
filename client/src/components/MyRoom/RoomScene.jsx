@@ -125,13 +125,12 @@ function DraggablePlacedItem({
 
   // Compute safe initial / persisted position with surface-aware elevation
   const initialCoord = useMemo(() => {
-    if (
-      item.position_x !== null && item.position_x !== undefined &&
-      item.position_z !== null && item.position_z !== undefined
-    ) {
+    const hasX = item.position_x !== null && item.position_x !== undefined && !isNaN(Number(item.position_x));
+    const hasZ = item.position_z !== null && item.position_z !== undefined && !isNaN(Number(item.position_z));
+    if (hasX && hasZ) {
       const x = Number(item.position_x);
       const z = Number(item.position_z);
-      const y = item.position_y !== null && item.position_y !== undefined
+      const y = item.position_y !== null && item.position_y !== undefined && !isNaN(Number(item.position_y))
         ? Number(item.position_y)
         : (getSurfaceAt(roomName, x, z, allEquippedItems, item.id).height || 0);
       return [x, y, z];
@@ -146,10 +145,12 @@ function DraggablePlacedItem({
   // Sync state if coordinates change externally
   useEffect(() => {
     if (!isDragging) {
-      if (item.position_x !== null && item.position_x !== undefined) {
+      const hasX = item.position_x !== null && item.position_x !== undefined && !isNaN(Number(item.position_x));
+      const hasZ = item.position_z !== null && item.position_z !== undefined && !isNaN(Number(item.position_z));
+      if (hasX && hasZ) {
         const x = Number(item.position_x);
         const z = Number(item.position_z);
-        const y = item.position_y !== null && item.position_y !== undefined
+        const y = item.position_y !== null && item.position_y !== undefined && !isNaN(Number(item.position_y))
           ? Number(item.position_y)
           : (getSurfaceAt(roomName, x, z, allEquippedItems, item.id).height || 0);
         const next = [x, y, z];
