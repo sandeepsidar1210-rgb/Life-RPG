@@ -143,12 +143,12 @@ export function ScholarProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        return localStorage.getItem('life_rpg_theme') || 'light';
+        return localStorage.getItem('life_rpg_theme') || 'dark';
       } catch (_err) {
-        return 'light';
+        return 'dark';
       }
     }
-    return 'light';
+    return 'dark';
   });
 
   const setTheme = useCallback((newTheme) => {

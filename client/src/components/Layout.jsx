@@ -123,41 +123,41 @@ export function Layout() {
       {/* =================================================================== */}
       <aside 
         aria-label="Desktop Navigation Sidebar"
-        className="hidden md:flex flex-col w-64 shrink-0 bg-cozy-parchment border-r-2 border-cozy-brown-dark sticky top-0 h-screen overflow-y-auto select-none"
+        className="hidden md:flex flex-col w-64 shrink-0 bg-[#0e111a] border-r-4 border-black sticky top-0 h-screen overflow-y-auto select-none z-30"
       >
         {/* Brand Header */}
-        <div className="p-4 border-b-2 border-cozy-brown-dark flex items-center gap-3">
+        <div className="p-4 border-b-4 border-black flex items-center gap-3 bg-[#141824]">
           <div 
-            className="w-10 h-10 pixel-box bg-cozy-cream rounded-pixel flex items-center justify-center text-xl shadow-pixel-sm border-2 border-cozy-brown-dark"
+            className="w-11 h-11 comic-box bg-[#ffe600] rounded-xl flex items-center justify-center text-2xl border-3 border-black shadow-comic-sm"
             aria-hidden="true"
           >
-            ☕
+            ⚡
           </div>
           <div>
-            <h1 className="text-xl font-pixel text-cozy-brown-dark tracking-wide leading-none">
-              Life RPG
+            <h1 className="text-2xl font-bangers text-white tracking-wider leading-none drop-shadow-[2px_2px_0px_#000]">
+              LIFE RPG
             </h1>
-            <p className="text-[11px] font-pixel text-cozy-brown-medium mt-1">
-              Cozy Habit Sanctuary
-            </p>
+            <span className="comic-tab-pill text-[9px] bg-[#00f0ff] text-black font-black mt-1 py-0.5 px-2">
+              COMIC EDITION
+            </span>
           </div>
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 p-3 space-y-1.5" aria-label="Main Navigation">
+        <nav className="flex-1 p-3 space-y-2" aria-label="Main Navigation">
           {NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
             let badge = null;
             if (item.badgeKey === 'quests' && activeQuestCount > 0) {
               badge = (
-                <span className="ml-auto px-1.5 py-0.5 text-[10px] font-pixel rounded-full bg-cozy-terracotta text-white font-bold">
+                <span className="ml-auto px-2 py-0.5 text-xs font-bangers rounded-md bg-[#ff007f] text-white border-2 border-black shadow-sm">
                   {activeQuestCount}
                 </span>
               );
             } else if (item.badgeKey === 'spirit' && spirit) {
               badge = (
-                <span className="ml-auto px-1.5 py-0.5 text-[10px] font-pixel rounded bg-cozy-sage-subtle text-cozy-sage-dark border border-cozy-sage-light">
-                  St.{spirit.current_stage?.stage_number || 1}
+                <span className="ml-auto px-2 py-0.5 text-xs font-bangers rounded-md bg-[#00f0ff] text-black border-2 border-black shadow-sm">
+                  ST.{spirit.current_stage?.stage_number || 1}
                 </span>
               );
             }
@@ -167,13 +167,13 @@ export function Layout() {
                 key={item.path}
                 to={item.path}
                 onClick={() => playSound('click')}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-pixel font-pixel text-xs sm:text-sm transition ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bangers tracking-wider text-base transition-all duration-200 border-3 ${
                   isActive
-                    ? 'bg-cozy-card text-cozy-brown-dark shadow-pixel-sm border-2 border-cozy-brown-dark font-bold translate-x-1'
-                    : 'text-cozy-brown-medium hover:bg-cozy-cream/80 hover:text-cozy-brown-dark border-2 border-transparent'
+                    ? 'bg-[#00f0ff] text-black border-black shadow-comic font-black -translate-y-1'
+                    : 'text-white/80 hover:text-black hover:bg-[#ff70a6] hover:border-black hover:shadow-comic border-transparent hover:-translate-y-1'
                 }`}
               >
-                <span className="text-base" aria-hidden="true">{item.icon}</span>
+                <span className="text-lg" aria-hidden="true">{item.icon}</span>
                 <span className="truncate">{item.label}</span>
                 {badge}
               </NavLink>
@@ -182,16 +182,16 @@ export function Layout() {
         </nav>
 
         {/* Scholar Mini Profile & Footer Controls */}
-        <div className="p-3 border-t-2 border-cozy-brown-dark bg-cozy-cream/50 space-y-3">
-          <div className="flex items-center justify-between gap-2">
+        <div className="p-3 border-t-4 border-black bg-[#141824] space-y-3">
+          <div className="flex items-center justify-between gap-2 p-2 bg-black/40 rounded-xl border-2 border-black">
             <div className="flex items-center gap-2 truncate">
-              <span className="text-lg select-none">🧙‍♂️</span>
+              <span className="text-xl select-none">🧙‍♂️</span>
               <div className="truncate">
-                <p className="text-xs font-pixel text-cozy-brown-dark font-bold truncate">
-                  {user?.email?.split('@')[0] || 'Scholar'}
+                <p className="text-xs font-bangers text-[#00f0ff] tracking-wide truncate">
+                  {user?.email?.split('@')[0] || 'SCHOLAR'}
                 </p>
-                <p className="text-[10px] text-cozy-brown-medium font-pixel">
-                  LVL {character.level} Scholar
+                <p className="text-[10px] text-white/70 font-bold uppercase font-mono">
+                  LVL {character.level} HERO
                 </p>
               </div>
             </div>
@@ -200,8 +200,8 @@ export function Layout() {
             <button
               type="button"
               onClick={toggleTheme}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Cozy Evening Dark'} theme`}
-              className="touch-target pixel-box-interactive bg-cozy-card text-cozy-brown-dark p-2 rounded-pixel text-xs shadow-pixel-sm"
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} theme`}
+              className="touch-target pixel-box-interactive bg-[#ffe600] text-black p-2 rounded-lg text-sm border-2 border-black shadow-comic-sm"
               aria-label="Toggle dark mode"
             >
               {theme === 'dark' ? '☀️' : '🌙'}
@@ -211,10 +211,10 @@ export function Layout() {
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full touch-target pixel-box-interactive bg-cozy-card hover:bg-cozy-terracotta-subtle hover:text-cozy-terracotta-dark text-cozy-brown-dark font-pixel text-xs py-2 px-3 rounded-pixel font-semibold transition flex items-center justify-center gap-2 shadow-pixel-sm"
+            className="w-full touch-target pixel-box-interactive bg-[#ff007f] hover:bg-[#e11d48] text-white font-bangers text-sm py-2 px-3 rounded-xl tracking-wider transition flex items-center justify-center gap-2 border-3 border-black shadow-comic-sm"
           >
             <span aria-hidden="true">🚪</span>
-            <span>Leave Haven</span>
+            <span>LEAVE SANCTUARY</span>
           </button>
         </div>
       </aside>
@@ -322,15 +322,15 @@ export function Layout() {
       </div>
 
       {/* =================================================================== */}
-      {/* MAIN CONTENT WORKSPACE                                              */}
+      {/* MAIN CONTENT WORKSPACE (WITH COMIC BORDER ACCENTS)                  */}
       {/* =================================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-6">
+      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-6 border-l-4 md:border-l-[6px] border-r-4 md:border-r-[6px] border-[#00f0ff] min-h-screen">
         {/* Persistent Desktop Top HUD Header */}
-        <header className="hidden md:flex items-center justify-between gap-4 p-4 lg:px-8 border-b-2 border-cozy-brown-dark bg-cozy-cream/80 backdrop-blur sticky top-0 z-20">
+        <header className="hidden md:flex items-center justify-between gap-4 p-4 lg:px-8 border-b-4 border-black bg-[#121624]/90 backdrop-blur sticky top-0 z-20 shadow-comic-sm">
           {/* Active Section & Badges */}
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="px-2.5 py-1 bg-cozy-sage-subtle text-cozy-sage-dark text-xs font-pixel rounded border border-cozy-sage-light font-bold">
-              LVL {character.level} Scholar
+            <span className="comic-tab-pill bg-[#00f0ff] text-black text-xs font-bangers tracking-wider border-2 border-black shadow-comic-sm">
+              ⚡ LVL {character.level} SCHOLAR
             </span>
 
             {/* Equipped Badges */}
@@ -338,7 +338,7 @@ export function Layout() {
               <span
                 key={b.id}
                 title={`Equipped Badge: ${b.item?.name}`}
-                className="px-2 py-0.5 bg-cozy-gold-light text-cozy-gold-dark text-xs font-pixel rounded border border-cozy-gold-base flex items-center gap-1 shadow-pixel-sm font-bold"
+                className="comic-sticker-yellow text-xs px-2.5 py-0.5 font-bangers flex items-center gap-1 shadow-comic-sm"
               >
                 <span>{b.item?.name?.includes('Dawn') ? '🌅' : '🌙'}</span>
                 <span>{b.item?.name}</span>
@@ -354,28 +354,28 @@ export function Layout() {
                   navigate('/spirit');
                 }}
                 title="View Study Spirit Companion"
-                className="px-2.5 py-1 bg-cozy-terracotta-subtle text-cozy-terracotta-dark hover:bg-cozy-terracotta hover:text-white text-xs font-pixel rounded border border-cozy-terracotta flex items-center gap-1.5 shadow-pixel-xs transition active:scale-95"
+                className="comic-sticker-pink text-xs px-3 py-1 font-bangers flex items-center gap-1.5 shadow-comic-sm active:scale-95 transition"
               >
                 <span>✨</span>
-                <span className="font-bold">{spirit.current_stage?.name || spirit.species?.name}</span>
-                <span className="text-[10px] opacity-80">(St.{spirit.current_stage?.stage_number || 1})</span>
+                <span>{spirit.current_stage?.name || spirit.species?.name}</span>
+                <span className="text-[10px] opacity-90">(ST.{spirit.current_stage?.stage_number || 1})</span>
               </button>
             )}
           </div>
 
-          {/* HUD Counters & Quick Actions */}
+          {/* HUD Counters & Quick Actions with Hover Uplift */}
           <div className="flex items-center gap-3">
             {/* Cozy Coins */}
             <motion.div
               key={character.cozy_coins}
               animate={{ scale: [1, 1.08, 1] }}
               transition={{ duration: 0.25 }}
-              className="pixel-box bg-cozy-parchment px-3 py-1 rounded-pixel flex items-center gap-2 border-2 border-cozy-brown-dark shadow-pixel-sm"
-              title={`${character.cozy_coins} Cozy Coins`}
+              className="pixel-box-interactive bg-[#ffe600] text-black px-3.5 py-1.5 rounded-xl flex items-center gap-2 border-3 border-black shadow-comic-sm"
+              title={`${character.cozy_coins} Coins`}
             >
-              <span className="text-base">🪙</span>
-              <span className="font-pixel text-sm font-bold text-cozy-gold-dark">
-                {character.cozy_coins} <span className="font-sans text-xs font-normal text-cozy-brown-medium">Coins</span>
+              <span className="text-xl">🪙</span>
+              <span className="font-bangers text-base tracking-wide text-black font-bold">
+                {character.cozy_coins} <span className="font-sans text-xs font-bold uppercase text-black/70">COINS</span>
               </span>
             </motion.div>
 
@@ -384,12 +384,12 @@ export function Layout() {
               key={streak.current_streak}
               animate={{ scale: [1, 1.08, 1] }}
               transition={{ duration: 0.25 }}
-              className="pixel-box bg-cozy-terracotta-subtle px-3 py-1 rounded-pixel flex items-center gap-2 border-2 border-cozy-terracotta-dark shadow-pixel-sm"
+              className="pixel-box-interactive bg-[#ff6a00] text-white px-3.5 py-1.5 rounded-xl flex items-center gap-2 border-3 border-black shadow-comic-sm"
               title={`${streak.current_streak} Day Streak`}
             >
-              <span className="text-base">🔥</span>
-              <span className="font-pixel text-sm font-bold text-cozy-terracotta-dark">
-                {streak.current_streak} <span className="font-sans text-xs font-normal text-cozy-brown-medium">Days</span>
+              <span className="text-xl">🔥</span>
+              <span className="font-bangers text-base tracking-wide text-white font-bold">
+                {streak.current_streak} <span className="font-sans text-xs font-bold uppercase text-white/80">DAYS</span>
               </span>
             </motion.div>
           </div>
@@ -412,8 +412,8 @@ export function Layout() {
         </main>
 
         {/* Desktop Footer */}
-        <footer className="w-full max-w-6xl mx-auto text-center text-xs text-cozy-brown-medium border-t border-cozy-border pt-4 px-4 hidden md:block">
-          Life RPG • Multi-Chamber Study Haven &amp; Companion Evolution System
+        <footer className="w-full max-w-6xl mx-auto text-center text-xs text-white/60 border-t-2 border-black/60 pt-4 px-4 hidden md:block font-mono uppercase tracking-wider">
+          LIFE RPG • COMIC MULTIVERSE STUDY SANCTUARY &amp; HERO COMPANION ENGINE
         </footer>
       </div>
 

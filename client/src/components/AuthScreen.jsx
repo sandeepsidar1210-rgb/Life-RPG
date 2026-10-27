@@ -71,25 +71,25 @@ export function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-cozy-cream flex flex-col items-center justify-center p-4 sm:p-6 font-sans text-cozy-brown-dark">
+    <div className="min-h-screen bg-[#090b10] flex flex-col items-center justify-center p-4 sm:p-6 font-sans text-white border-l-4 md:border-l-[6px] border-r-4 md:border-r-[6px] border-[#00f0ff]">
       {/* Decorative Study Elements */}
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="text-center mb-6"
+        className="text-center mb-6 space-y-2"
       >
         <div 
-          className="inline-flex items-center justify-center w-16 h-16 pixel-box bg-cozy-parchment rounded-pixel text-3xl mb-3 shadow-pixel select-none"
+          className="inline-flex items-center justify-center w-16 h-16 comic-box bg-[#ffe600] text-black rounded-2xl text-3xl mb-1 shadow-comic-sm border-3 border-black select-none"
           aria-hidden="true"
         >
-          ☕
+          ⚡
         </div>
-        <h1 className="text-3xl sm:text-4xl font-pixel text-cozy-brown-dark tracking-wide">
-          Life RPG
+        <h1 className="comic-title-gradient text-4xl sm:text-5xl tracking-wider">
+          LIFE RPG
         </h1>
-        <p className="text-xs sm:text-sm text-cozy-brown-medium font-medium mt-1">
-          Enter your study haven and turn daily tasks into quests
+        <p className="text-xs sm:text-sm text-white/80 font-medium">
+          Enter your comic study sanctuary and turn daily habits into epic quests
         </p>
       </motion.header>
 
@@ -99,10 +99,10 @@ export function AuthScreen() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="pixel-box bg-cozy-card rounded-pixel shadow-pixel-lg overflow-hidden"
+          className="comic-box bg-[#131725] rounded-2xl shadow-comic-lg border-4 border-black overflow-hidden"
         >
           {/* Tab Headers */}
-          <div role="tablist" aria-label="Authentication Options" className="flex border-b-2 border-cozy-brown-dark bg-cozy-parchment/80">
+          <div role="tablist" aria-label="Authentication Options" className="flex border-b-4 border-black bg-black/40">
             <button
               type="button"
               role="tab"
@@ -113,13 +113,13 @@ export function AuthScreen() {
                 setInlineError(null);
                 setSuccessMessage(null);
               }}
-              className={`touch-target flex-1 py-3 text-center font-pixel text-sm sm:text-base transition-colors focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
+              className={`touch-target flex-1 py-3 text-center font-bangers text-base sm:text-lg transition-colors border-r-2 border-black ${
                 !isSignUp 
-                  ? 'bg-cozy-card text-cozy-brown-dark font-bold' 
-                  : 'text-cozy-brown-medium hover:text-cozy-brown-dark hover:bg-cozy-parchment'
+                  ? 'bg-[#00f0ff] text-black font-black' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              <span aria-hidden="true">🔑</span> Log In
+              <span aria-hidden="true">🔑</span> LOG IN
             </button>
             <button
               type="button"
@@ -131,13 +131,13 @@ export function AuthScreen() {
                 setInlineError(null);
                 setSuccessMessage(null);
               }}
-              className={`touch-target flex-1 py-3 text-center font-pixel text-sm sm:text-base transition-colors focus-visible:outline-2 focus-visible:outline-cozy-brown-dark ${
+              className={`touch-target flex-1 py-3 text-center font-bangers text-base sm:text-lg transition-colors ${
                 isSignUp 
-                  ? 'bg-cozy-card text-cozy-brown-dark font-bold' 
-                  : 'text-cozy-brown-medium hover:text-cozy-brown-dark hover:bg-cozy-parchment'
+                  ? 'bg-[#ff70a6] text-black font-black' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
             >
-              <span aria-hidden="true">✨</span> Sign Up
+              <span aria-hidden="true">✨</span> SIGN UP
             </button>
           </div>
 
@@ -248,21 +248,21 @@ export function AuthScreen() {
             <button
               type="submit"
               disabled={loading}
-              className="touch-target w-full pixel-box-interactive bg-cozy-sage text-white font-pixel text-sm sm:text-base py-3 rounded-pixel font-bold flex items-center justify-center gap-2 hover:bg-cozy-sage-dark active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cozy-brown-dark"
+              className="touch-target w-full pixel-box-interactive bg-[#ffe600] hover:bg-[#fef08a] text-black font-bangers text-lg sm:text-xl py-3 rounded-xl font-bold flex items-center justify-center gap-2 border-3 border-black shadow-comic-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
-                  <span>{isSignUp ? 'Creating Character...' : 'Opening Study Room...'}</span>
+                  <span className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+                  <span>{isSignUp ? 'FORGING CHARACTER...' : 'OPENING SANCTUARY...'}</span>
                 </span>
               ) : (
-                <span>{isSignUp ? '✨ Create Character' : '🚪 Enter Study Room'}</span>
+                <span>{isSignUp ? '⚡ CREATE CHARACTER' : '🚪 ENTER SANCTUARY'}</span>
               )}
             </button>
           </form>
 
           {/* Footer info */}
-          <div className="bg-cozy-parchment/60 border-t border-cozy-border px-6 py-3.5 text-center text-xs text-cozy-brown-medium">
+          <div className="bg-black/40 border-t-2 border-black px-6 py-4 text-center text-xs text-white/70 font-sans">
             {isSignUp ? (
               <span>
                 Already have a character?{' '}
@@ -272,9 +272,9 @@ export function AuthScreen() {
                     setIsSignUp(false);
                     setInlineError(null);
                   }}
-                  className="touch-target font-bold text-cozy-terracotta-dark hover:underline focus-visible:outline-2 focus-visible:outline-cozy-brown-dark"
+                  className="font-bangers text-[#00f0ff] text-sm hover:underline tracking-wide ml-1"
                 >
-                  Log In
+                  LOG IN
                 </button>
               </span>
             ) : (
@@ -286,9 +286,9 @@ export function AuthScreen() {
                     setIsSignUp(true);
                     setInlineError(null);
                   }}
-                  className="touch-target font-bold text-cozy-sage-dark hover:underline focus-visible:outline-2 focus-visible:outline-cozy-brown-dark"
+                  className="font-bangers text-[#ff70a6] text-sm hover:underline tracking-wide ml-1"
                 >
-                  Create one now
+                  CREATE ONE NOW
                 </button>
               </span>
             )}
@@ -296,9 +296,9 @@ export function AuthScreen() {
         </motion.div>
       </main>
 
-      {/* Cozy Theme Badge */}
-      <footer className="mt-8 text-xs text-cozy-brown-medium flex items-center gap-2 font-pixel">
-        <span aria-hidden="true">🍂</span> Life RPG • Accessible Pixel Study Haven
+      {/* Comic Theme Badge */}
+      <footer className="mt-8 text-xs text-white/60 flex items-center gap-2 font-mono uppercase tracking-wider">
+        <span aria-hidden="true">⚡</span> LIFE RPG • COMIC MULTIVERSE EDITION
       </footer>
     </div>
   );

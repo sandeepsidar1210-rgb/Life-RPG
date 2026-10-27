@@ -3,86 +3,89 @@
 @tailwind utilities;
 
 :root {
-  /* Theme Core Palette - WCAG AA High Contrast Compliant */
-  --color-cream: #FDFBF7;
-  --color-parchment: #F3ECE1;
-  --color-card: #FFFFFF;
-  --color-border: #D8CAB6;
+  /* Comic Neo-Brutal & Spider-Verse Palette Tokens */
+  --comic-cyan: #00F0FF;
+  --comic-pink: #FF6B9D;
+  --comic-pink-deep: #FF70A6;
+  --comic-orange: #FF6A00;
+  --comic-magenta: #FF007F;
+  --comic-yellow: #FFE600;
+  --comic-lime: #10B981;
+  --comic-black: #000000;
+  
+  /* Halftone Dark Comic Default Background Tokens */
+  --color-cream: #090B10;
+  --color-parchment: #121520;
+  --color-card: #191D2C;
+  --color-border: #000000;
 
-  /* Browns - Enhanced contrast for text against cream (>= 4.5:1) */
-  --color-brown-dark: #2C1E17;    /* ~14:1 contrast on cream */
-  --color-brown-medium: #4D372B;  /* ~8.5:1 contrast on cream */
-  --color-brown-light: #685042;   /* ~5.5:1 contrast on cream */
-  --color-brown-subtle: #E8DED1;
-  --color-brown-base: #3D2C22;
+  /* High contrast text tokens on comic background */
+  --color-brown-dark: #FFFFFF;
+  --color-brown-medium: #CBD5E1;
+  --color-brown-light: #94A3B8;
+  --color-brown-subtle: #24293D;
+  --color-brown-base: #F8FAFC;
 
-  /* Sage Green Accents - Deepened for >= 4.5:1 readability on light backgrounds */
-  --color-sage-base: #355E3B;     /* ~5.8:1 contrast */
-  --color-sage-dark: #244229;     /* ~9.2:1 contrast */
-  --color-sage-light: #7E9E82;
-  --color-sage-subtle: #E2ECE1;
+  /* Comic Neon Accents */
+  --color-sage-base: #00F0FF;
+  --color-sage-dark: #0284C7;
+  --color-sage-light: #7DD3FC;
+  --color-sage-subtle: #0C4A6E;
 
-  /* Muted Terracotta Highlights - Deepened for >= 4.5:1 readability */
-  --color-terracotta-base: #A03E22; /* ~5.4:1 contrast */
-  --color-terracotta-dark: #7A2B15; /* ~8.0:1 contrast */
-  --color-terracotta-light: #D98D77;
-  --color-terracotta-subtle: #F7EAE5;
+  --color-terracotta-base: #FF6A00;
+  --color-terracotta-dark: #EA580C;
+  --color-terracotta-light: #FB923C;
+  --color-terracotta-subtle: #7C2D12;
 
-  /* Cozy Gold (Cozy Coins) - Deepened for text contrast */
-  --color-gold-base: #8F5B10;     /* ~5.2:1 contrast */
-  --color-gold-dark: #6E4407;     /* ~8.1:1 contrast */
-  --color-gold-light: #FCEFD2;
+  --color-gold-base: #FFE600;
+  --color-gold-dark: #EAB308;
+  --color-gold-light: #FEF08A;
 
-  /* Character Stats Tokens */
-  --color-stat-focus: #285873;      /* Deep study blue */
-  --color-stat-discipline: #8F5B10; /* Steadfast gold */
-  --color-stat-vitality: #355E3B;   /* Vitality green */
-  --color-stat-creativity: #A03E22; /* Terracotta flame */
+  /* Stats Tokens in Comic Vibe */
+  --color-stat-focus: #00F0FF;
+  --color-stat-discipline: #FFE600;
+  --color-stat-vitality: #10B981;
+  --color-stat-creativity: #FF007F;
 
-  /* Typography with robust fallbacks to eliminate FOIT (invisible text) and minimize CLS */
+  /* Typography */
   --font-pixel: 'Pixelify Sans', 'Courier New', monospace, sans-serif;
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-bangers: 'Bangers', Impact, cursive, sans-serif;
+  --font-grotesk: 'Space Grotesk', 'Outfit', sans-serif;
 }
 
-[data-theme="dark"], .dark {
-  /* Cozy Evening Theme Core Palette */
-  --color-cream: #18141F;        /* Midnight plum hearth */
-  --color-parchment: #241D30;    /* Muted night slate */
-  --color-card: #2E253D;         /* Cozy night study card */
-  --color-border: #4D3F63;       /* Heather dusk border */
+[data-theme="light"] {
+  --color-cream: #F4F4F0;
+  --color-parchment: #EDEBE4;
+  --color-card: #FFFFFF;
+  --color-border: #000000;
 
-  /* Text colors on dark */
-  --color-brown-dark: #FBF6EF;   /* Soft ivory parchment text (~13:1 contrast) */
-  --color-brown-medium: #DDD2C4; /* Warm parchment subtext (~9:1 contrast) */
-  --color-brown-light: #B7A898;  /* Muted warm grey */
-  --color-brown-subtle: #3B304D;
-  --color-brown-base: #F0E6D8;
+  --color-brown-dark: #000000;
+  --color-brown-medium: #334155;
+  --color-brown-light: #64748B;
+  --color-brown-subtle: #E2E8F0;
+  --color-brown-base: #0F172A;
 
-  /* Accents in dark mode */
-  --color-sage-base: #529E60;
-  --color-sage-dark: #A7D8B1;
-  --color-sage-light: #3D6B45;
-  --color-sage-subtle: #1E3423;
+  --color-sage-base: #0284C7;
+  --color-sage-dark: #0369A1;
+  --color-sage-light: #BAE6FD;
+  --color-sage-subtle: #E0F2FE;
 
-  --color-terracotta-base: #E06C4D;
-  --color-terracotta-dark: #FCA58E;
-  --color-terracotta-light: #A03E22;
-  --color-terracotta-subtle: #3E1E16;
+  --color-terracotta-base: #EA580C;
+  --color-terracotta-dark: #C2410C;
+  --color-terracotta-light: #FDBA74;
+  --color-terracotta-subtle: #FFEDD5;
 
-  --color-gold-base: #E5A83B;
-  --color-gold-dark: #FBD57D;
-  --color-gold-light: #44320F;
-
-  /* Character Stats Tokens in Dark */
-  --color-stat-focus: #58A6DF;
-  --color-stat-discipline: #FBD57D;
-  --color-stat-vitality: #72C783;
-  --color-stat-creativity: #FCA58E;
+  --color-gold-base: #CA8A04;
+  --color-gold-dark: #A16207;
+  --color-gold-light: #FEF08A;
 }
 
 @layer base {
   body {
     background-color: var(--color-cream);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1.5px, transparent 1.5px);
+    background-size: 20px 20px;
     color: var(--color-brown-dark);
     font-family: var(--font-sans);
     margin: 0;
@@ -91,43 +94,83 @@
     overflow-x: hidden;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-pixel);
-    letter-spacing: 0.02em;
+  [data-theme="light"] body {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1.5px, transparent 1.5px);
   }
 
-  /* Consistent, high-visibility keyboard focus outline */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-bangers);
+    letter-spacing: 0.03em;
+  }
+
   :focus-visible {
-    outline: 2px solid var(--color-brown-dark);
-    outline-offset: 2px;
+    outline: 3px solid #00F0FF;
+    outline-offset: 3px;
   }
 }
 
-/* Cozy pixel-styled card and button utilities */
+/* ========================================================================= */
+/* UNIVERSAL COMIC BOX UPLIFT WITH EFFECTS (APPLIED TO THE WHOLE WEBSITE)     */
+/* ========================================================================= */
+
 @layer components {
-  .pixel-box {
-    border: 2px solid var(--color-brown-dark);
-    box-shadow: 3px 3px 0px 0px var(--color-brown-dark);
+  /* Standard Box / Card Base */
+  .pixel-box,
+  .comic-box,
+  .comic-panel,
+  .comic-card,
+  .comic-bubble,
+  .comic-uplift {
+    border: 3px solid #000000 !important;
+    box-shadow: 5px 5px 0px 0px #000000;
+    border-radius: 14px;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 0.2s ease,
+                border-color 0.2s ease;
   }
-  
-  .pixel-box-interactive {
-    border: 2px solid var(--color-brown-dark);
-    box-shadow: 3px 3px 0px 0px var(--color-brown-dark);
-    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+
+  /* Interactive Elements */
+  .pixel-box-interactive,
+  .comic-box-interactive,
+  .comic-btn {
+    border: 3px solid #000000 !important;
+    box-shadow: 5px 5px 0px 0px #000000;
+    border-radius: 12px;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 0.2s ease,
+                background-color 0.2s ease;
     cursor: pointer;
   }
-  
-  .pixel-box-interactive:hover:not(:disabled) {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0px 0px var(--color-brown-dark);
+
+  /* THE HOVER UPLIFT EFFECT - APPLIES TO ALL BOXES ACROSS WEBSITE */
+  .pixel-box:hover,
+  .pixel-box-interactive:hover:not(:disabled),
+  .comic-box:hover,
+  .comic-panel:hover,
+  .comic-card:hover,
+  .comic-bubble:hover,
+  .comic-uplift:hover,
+  .comic-btn:hover:not(:disabled) {
+    transform: translate(-5px, -5px) scale(1.015);
+    box-shadow: 10px 10px 0px 0px #000000, 0 0 25px rgba(0, 240, 255, 0.45);
   }
 
-  .pixel-box-interactive:active:not(:disabled) {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0px 0px var(--color-brown-dark);
+  /* Active Click State */
+  .pixel-box:active,
+  .pixel-box-interactive:active:not(:disabled),
+  .comic-box:active,
+  .comic-panel:active,
+  .comic-card:active,
+  .comic-bubble:active,
+  .comic-uplift:active,
+  .comic-btn:active:not(:disabled) {
+    transform: translate(2px, 2px) scale(0.99);
+    box-shadow: 2px 2px 0px 0px #000000;
   }
 
-  /* Minimum 44x44px touch target on mobile */
+  /* Touch Target */
   .touch-target {
     min-height: 44px;
     min-width: 44px;
@@ -135,9 +178,192 @@
     align-items: center;
     justify-content: center;
   }
+
+  /* ========================================================================= */
+  /* COMIC PANEL THEMES (FROM SCREENSHOTS)                                      */
+  /* ========================================================================= */
+
+  .comic-panel-pink {
+    background-color: #FF70A6 !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 18px !important;
+  }
+
+  .comic-panel-cyan {
+    background-color: #00F0FF !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 18px !important;
+  }
+
+  .comic-panel-orange {
+    background-color: #FF6A00 !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 18px !important;
+  }
+
+  .comic-panel-magenta {
+    background-color: #FF007F !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 18px !important;
+  }
+
+  .comic-panel-yellow {
+    background-color: #FFE600 !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 18px !important;
+  }
+
+  .comic-panel-dark {
+    background-color: #121520 !important;
+    color: #FFFFFF !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 18px !important;
+  }
+
+  /* Inner White Speech Bubble Component */
+  .comic-speech-bubble {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    border-radius: 14px !important;
+    box-shadow: 4px 4px 0px 0px #000000 !important;
+    padding: 14px 16px;
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  }
+
+  .comic-speech-bubble:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+  }
+
+  /* Speech Bubble Header Label */
+  .comic-speaker {
+    font-family: 'Space Grotesk', 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  /* Top Black Badge Pill */
+  .comic-tab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #000000;
+    color: #FFFFFF;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+  }
+
+  /* Bottom Black Banner Bar */
+  .comic-bottom-bar {
+    background: #000000;
+    color: #FFFFFF;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 6px;
+    width: 100%;
+    text-align: left;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+  }
+
+  /* Tilted Action Badges (SIZZLE!, BOILING!, POP!) */
+  .comic-sticker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bangers', cursive, sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    padding: 4px 12px;
+    border: 2.5px solid #000000;
+    box-shadow: 3px 3px 0px #000000;
+    border-radius: 6px;
+    user-select: none;
+    transition: transform 0.15s ease;
+  }
+
+  .comic-sticker:hover {
+    transform: scale(1.1) rotate(0deg) !important;
+  }
+
+  .comic-sticker-yellow {
+    background: #FFE600;
+    color: #000000;
+    transform: rotate(-3deg);
+  }
+
+  .comic-sticker-orange {
+    background: #FF6A00;
+    color: #FFFFFF;
+    transform: rotate(3deg);
+  }
+
+  .comic-sticker-pink {
+    background: #FF007F;
+    color: #FFFFFF;
+    transform: rotate(-4deg);
+  }
+
+  .comic-sticker-cyan {
+    background: #00F0FF;
+    color: #000000;
+    transform: rotate(2deg);
+  }
+
+  /* Display Titles */
+  .comic-title {
+    font-family: 'Bangers', cursive, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .comic-title-gradient {
+    font-family: 'Bangers', cursive, sans-serif;
+    background: linear-gradient(135deg, #00F0FF 0%, #FF6B9D 50%, #FFE600 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(4px 4px 0px #000000);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .comic-title-pink {
+    font-family: 'Bangers', cursive, sans-serif;
+    color: #FF70A6;
+    text-shadow: 4px 4px 0px #000000;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
 }
 
-/* Screen reader only utility */
+/* Accessibility Utilities */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -150,16 +376,17 @@
   border-width: 0;
 }
 
-/* Skip to Content Link */
 .skip-link {
   position: absolute;
   top: -40px;
   left: 10px;
-  background: var(--color-brown-dark);
-  color: #ffffff;
+  background: #000000;
+  color: #00F0FF;
+  border: 2px solid #00F0FF;
   padding: 8px 16px;
   z-index: 100;
   border-radius: 4px;
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: bold;
   text-decoration: none;
   transition: top 0.2s;
